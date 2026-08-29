@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from database import get_db
 from models import User
-from schemas import UserCreate, UserOut, Token, LoginRequest
+from schemas import UserCreate, UserOut, Token
 from security import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -29,8 +30,9 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer"}
 
 @router.post("/login", response_model=Token)
-async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.email == payload.email))
+async def login(payload: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+    # OAuth2 specifies 'username' instead of 'email' in the form
+    result = await db.execute(select(User).where(User.email == payload.username))
     user = result.scalars().first()
     
     if not user or not verify_password(payload.password, user.password_hash):

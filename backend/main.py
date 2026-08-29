@@ -10,6 +10,8 @@ from openai import AsyncOpenAI
 from database import engine, Base
 from routers import auth
 from schemas import RecipeRequest, RecipeResponse
+from deps import get_current_user
+from models import User
 
 load_dotenv()
 
@@ -42,7 +44,10 @@ async def root():
     return {"message": "SnapChef API is running!"}
 
 @app.post("/api/recipes/generate", response_model=RecipeResponse)
-async def generate_recipe(request: RecipeRequest):
+async def generate_recipe(
+    request: RecipeRequest,
+    current_user: User = Depends(get_current_user)
+):
     if not client:
         raise HTTPException(status_code=500, detail="OpenAI API key not configured")
     
