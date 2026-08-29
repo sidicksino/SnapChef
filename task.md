@@ -1,8 +1,6 @@
-# Task Tracking: Phase 1 (Backend & Database)
+# Task Tracking: Phase 2 (Vision Model - YOLOv8 Edge)
 
-- `[x]` **Update Dependencies:** Add SQLAlchemy, Passlib, and PyJWT to `requirements.txt`.
-- `[x]` **Database Setup:** Create `database.py` to handle connections.
-- `[x]` **ORM Models:** Create `models.py` for User, Recipe, and RecipeIngredient.
-- `[x]` **Authentication Logic:** Create `security.py` for password hashing and JWT.
-- `[x]` **API Routers:** Create endpoints for Registration, Login, and saving recipes.
-- `[x]` **Wire it up:** Update `main.py` to connect the database and routers.
+- `[ ]` **Dataset Selection:** Find a high-quality food ingredient dataset on Roboflow.
+- `[x]` **Training Script:** Write a Jupyter Notebook or Python script to train YOLOv8n (Nano).
+- `[x]` **Model Export:** Add the code to export the `.pt` model to an `int8` quantized `.tflite` model.
+- `[x]` **Test Inference:** Write a quick script to test the `.tflite` model locally on a test image before moving to React Native.

@@ -124,19 +124,17 @@ The backend will expose a RESTful API. Below are the core endpoints:
 - Implement JWT Authentication.
 - Build the `/generate` endpoint using OpenAI Structured Outputs to match the DB schema.
 
-### Phase 2: Vision Model Preparation (YOLOv8)
-- Gather a robust food ingredient dataset (e.g., Roboflow Food-Ingredients).
-- Train/fine-tune YOLOv8.
-- Export the PyTorch model to `float16` or `int8` quantized `.tflite` for mobile.
+### Phase 2: Vision Model Preparation (YOLOv8 Edge)
+- Gather a robust food ingredient dataset (e.g., Roboflow).
+- Train/fine-tune a lightweight model (YOLOv8n - Nano) to ensure it runs fast on a phone.
+- Export the PyTorch model to an `int8` quantized `.tflite` format for maximum on-device speed.
 
 ### Phase 3: Mobile App Frontend
 - Initialize Expo app with Nativewind (TailwindCSS) for styling.
-- Integrate `react-native-fast-tflite` and the camera package.
+- Integrate `react-native-vision-camera` and `react-native-fast-tflite` to process frames and draw real-time bounding boxes.
 - Wire up the API calls to the Phase 1 backend.
 
 ---
 ## User Review Required
 
-Please review this comprehensive system design. 
-1. **Database:** Does the PostgreSQL schema look sufficient for your needs?
-2. **App Flow:** Does the step-by-step UX flow (Scan -> Confirm Ingredients -> Generate) match your vision?
+*No pending reviews. We have officially locked in the **Edge Vision** (TFLite) architecture for real-time camera detection!*
