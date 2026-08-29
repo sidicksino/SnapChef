@@ -1,6 +1,7 @@
-# Task Tracking: Phase 2 (Vision Model - YOLOv8 Edge)
+# Task Tracking: Phase 1.5 (Extended Backend Features)
 
-- `[ ]` **Dataset Selection:** Find a high-quality food ingredient dataset on Roboflow.
-- `[x]` **Training Script:** Write a Jupyter Notebook or Python script to train YOLOv8n (Nano).
-- `[x]` **Model Export:** Add the code to export the `.pt` model to an `int8` quantized `.tflite` model.
-- `[x]` **Test Inference:** Write a quick script to test the `.tflite` model locally on a test image before moving to React Native.
+- `[x]` **Schemas Update:** Add Pydantic models for Profile, Password Reset, and Recipe History.
+- `[ ]` **Auth Routes:** Implement `/forgot-password`, `/reset-password`, and `/change-password` in `auth.py`.
+- `[ ]` **Users Routes:** Create `users.py` and implement `GET` and `PUT` `/api/users/me`.
+- `[ ]` **Recipes Routes:** Create `recipes.py` and implement `GET` and `POST` `/api/recipes`, moving the `/generate` endpoint here.
+- `[ ]` **Wire it up:** Mount the new routers in `main.py`.

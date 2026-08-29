@@ -79,9 +79,13 @@ The backend will expose a RESTful API. Below are the core endpoints:
 | :--- | :--- | :--- | :--- |
 | `/api/auth/register` | `POST` | No | Creates a new user account. |
 | `/api/auth/login` | `POST` | No | Returns a JWT access token. |
-| `/api/recipes/generate` | `POST` | Yes | Takes an array of ingredient strings, calls the LLM, and returns a recipe JSON. |
-| `/api/recipes` | `POST` | Yes | Saves a generated recipe to the user's profile. |
-| `/api/recipes` | `GET` | Yes | Retrieves a paginated list of the user's saved recipes. |
+| `/api/auth/forgot-password` | `POST` | No | Generates a reset token (mocked via console). |
+| `/api/auth/change-password` | `POST` | Yes | Changes the password for the authenticated user. |
+| `/api/users/me` | `GET` | Yes | Retrieves the authenticated user's profile. |
+| `/api/users/me` | `PUT` | Yes | Updates profile (e.g., dietary preferences). |
+| `/api/recipes/generate` | `POST` | Yes | Calls the LLM and returns a recipe JSON. |
+| `/api/recipes` | `POST` | Yes | Saves a generated recipe to the user's history. |
+| `/api/recipes` | `GET` | Yes | Retrieves the user's saved recipes (History). |
 
 ### Payload Example: `/api/recipes/generate`
 **Request:**
@@ -119,10 +123,10 @@ The backend will expose a RESTful API. Below are the core endpoints:
 
 ## 5. Development Phases
 
-### Phase 1: Backend & Database (Current Focus)
-- Set up PostgreSQL database and SQLAlchemy ORM models.
-- Implement JWT Authentication.
-- Build the `/generate` endpoint using OpenAI Structured Outputs to match the DB schema.
+### Phase 1.5: Extended Backend Features (Current Focus)
+- Implement User Profile endpoints (`GET` and `PUT` `/api/users/me`).
+- Implement Password Management (`/forgot-password` and `/change-password`).
+- Implement Recipe History (`GET` and `POST` `/api/recipes`).
 
 ### Phase 2: Vision Model Preparation (YOLOv8 Edge)
 - Gather a robust food ingredient dataset (e.g., Roboflow).
@@ -135,6 +139,11 @@ The backend will expose a RESTful API. Below are the core endpoints:
 - Wire up the API calls to the Phase 1 backend.
 
 ---
-## User Review Required
+## User Review Required (Extended Backend Features)
 
-*No pending reviews. We have officially locked in the **Edge Vision** (TFLite) architecture for real-time camera detection!*
+I have updated the **API Contract Design (Section 3)** to include:
+1. `forgot-password` and `change-password`
+2. `users/me` (Profile management)
+3. `recipes` (History of saved recipes)
+
+**Open Question:** For the `forgot-password` endpoint, in a production app this sends an email. Since we don't have an email server (SMTP) set up right now, I will build it to generate a secure reset token and simply print the reset link to the server console so you can test it. Is that acceptable for now?
