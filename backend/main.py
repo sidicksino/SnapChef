@@ -1,14 +1,26 @@
-from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from typing import List, Optional
 import os
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
+# DB and Auth imports
+from database import engine, Base
+from routers import auth
+from schemas import RecipeRequest, RecipeResponse
+
 load_dotenv()
 
-app = FastAPI(title="Fridge Recipe Generator API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database tables on startup (useful for local development)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
+app = FastAPI(title="SnapChef API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,28 +30,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize OpenAI client (make sure to add your API key to the .env file)
+# Mount the Authentication Router
+app.include_router(auth.router)
+
+# Initialize OpenAI client
 api_key = os.getenv("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=api_key) if api_key else None
 
-class RecipeRequest(BaseModel):
-    ingredients: List[str]
-    dietary_preferences: Optional[List[str]] = None
-    cooking_time_minutes: Optional[int] = None
-
-class RecipeResponse(BaseModel):
-    title: str
-    description: str
-    ingredients: List[str]
-    instructions: List[str]
-    estimated_time: int
-    nutritional_info: Optional[str] = None
-
 @app.get("/")
 async def root():
-    return {"message": "Fridge Recipe Generator API is running!"}
+    return {"message": "SnapChef API is running!"}
 
-@app.post("/generate-recipe", response_model=RecipeResponse)
+@app.post("/api/recipes/generate", response_model=RecipeResponse)
 async def generate_recipe(request: RecipeRequest):
     if not client:
         raise HTTPException(status_code=500, detail="OpenAI API key not configured")
