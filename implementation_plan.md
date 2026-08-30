@@ -123,30 +123,33 @@ The backend will expose a RESTful API. Below are the core endpoints:
 
 ## 5. Development Phases
 
-### Phase 1.5: Extended Backend Features (Current Focus)
+### Phase 1.5: Extended Backend Features (Completed)
 - Implement User Profile endpoints (`GET` and `PUT` `/api/users/me`).
 - Implement Password Management (`/forgot-password` and `/change-password`).
 - Implement Recipe History (`GET` and `POST` `/api/recipes`).
 
-### Phase 2: Vision Model Preparation (YOLOv8 Edge)
+### Phase 2: Vision Model Preparation (YOLOv8 Edge) (Completed)
 - Gather a robust food ingredient dataset (e.g., Roboflow).
 - Train/fine-tune a lightweight model (YOLOv8n - Nano) to ensure it runs fast on a phone.
 - Export the PyTorch model to an `int8` quantized `.tflite` format for maximum on-device speed.
 
-### Phase 3: Mobile App Frontend
+### Phase 3: Mobile App Frontend (Current Focus)
 - `[x]` Initialize Expo app with Nativewind (TailwindCSS) for styling.
   - Scaffolded via `create-expo-app` (SDK 57, `expo-router`, TypeScript, `src/app` structure) into `mobile/`.
-  - Nativewind v4 wired: `tailwind.config.js`, `babel.config.js`, `metro.config.js`, `src/global.css` (Tailwind directives), imported from `src/app/_layout.tsx`. Verified with `tsc --noEmit`, `expo-doctor`, and a static web export.
-  - Official Expo agent skills (26, from `expo/skills`) installed into `mobile/.claude/skills/` via `npx skills@latest add expo/skills --skill '*'` — the `/plugin install` route wasn't available in this environment, so skills were vendored as files instead (portable, git-committable, no marketplace step needed). Confirmed against `expo-tailwind-setup`: it now recommends Tailwind v4 + `react-native-css` + Nativewind v5 (preview/nightly) — deliberately stayed on the stable v4/v3 combo above instead; revisit once v5 leaves preview.
-- `[ ]` Integrate `react-native-vision-camera` and `react-native-fast-tflite` to process frames and draw real-time bounding boxes.
-- `[ ]` Wire up the API calls to the Phase 1 backend.
+  - Nativewind v4 wired: `tailwind.config.js`, `babel.config.js`, `metro.config.js`, `src/global.css` (Tailwind directives), imported from `src/app/_layout.tsx`.
+- `[ ]` UI Framework additions: Use `expo-blur` to achieve the ultra-premium Apple/Spotify glassmorphism effects we designed.
+- `[ ]` Integrate `react-native-vision-camera` and `react-native-fast-tflite` to process frames and draw real-time bounding boxes using the exported YOLO model.
+- `[ ]` API Client: Setup Axios with `expo-secure-store` to manage JWT tokens and communicate with our FastAPI backend.
+
 
 ---
-## User Review Required (Extended Backend Features)
+## User Review Required: Phase 3 (Mobile App Frontend)
 
-I have updated the **API Contract Design (Section 3)** to include:
-1. `forgot-password` and `change-password`
-2. `users/me` (Profile management)
-3. `recipes` (History of saved recipes)
+We are ready to start building the mobile app! Here is the proposed technical stack for the frontend:
+1. **Framework:** React Native with Expo (specifically using Expo Router for modern, file-based navigation).
+2. **Styling:** NativeWind (Tailwind CSS) + `expo-blur`. This allows us to rapidly build the exact ultra-premium, dark-mode glassmorphic designs we generated.
+3. **AI Vision:** `react-native-vision-camera` + `react-native-fast-tflite`. This will load your exported `.tflite` model locally on the phone to detect ingredients in real-time without needing an internet connection for the vision part.
 
-**Open Question:** For the `forgot-password` endpoint, in a production app this sends an email. Since we don't have an email server (SMTP) set up right now, I will build it to generate a secure reset token and simply print the reset link to the server console so you can test it. Is that acceptable for now?
+**Open Questions:**
+1. Are you comfortable using Expo and NativeWind (Tailwind) for the frontend, or would you prefer a different UI approach?
+2. Did you successfully download the `best_saved_model.tflite` (or the zip file) from Google Colab? We will need to copy this file into our new app's assets folder!
