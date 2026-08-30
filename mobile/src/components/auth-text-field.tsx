@@ -9,11 +9,11 @@ export const AuthTextField = forwardRef<TextInput, AuthTextFieldProps>(
   ({ label, ...inputProps }, ref) => {
     return (
       <View className="gap-2">
-        <Text className="text-sm font-semibold text-gray-400">{label}</Text>
+        <Text className="font-poppins-medium text-sm text-gray-400">{label}</Text>
         <TextInput
           ref={ref}
           placeholderTextColor="#6B7280"
-          className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-base text-white"
+          className="rounded-2xl border border-white/10 bg-surface-card px-5 py-4 font-poppins-regular text-base text-white"
           {...inputProps}
         />
       </View>

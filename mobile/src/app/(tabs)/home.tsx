@@ -1,8 +1,10 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
-import { Link } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { EmptyState } from '@/components/empty-state';
 
 // Extra clearance for the floating web tab bar, which overlays the top of
 // the screen instead of reserving layout space (see app-tabs.web.tsx).
@@ -14,7 +16,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View className="flex-1 bg-black">
+    <View className="flex-1 bg-bg-primary">
       <StatusBar style="light" />
       <ScrollView
         contentContainerStyle={{
@@ -22,34 +24,42 @@ export default function HomeScreen() {
           paddingBottom: insets.bottom + 32,
         }}
         className="flex-1 px-6">
-        <Text className="text-sm font-semibold text-gray-400">Welcome back</Text>
-        <Text className="mb-8 text-3xl font-extrabold text-white">What&apos;s in your fridge?</Text>
+        <Text className="font-poppins-medium text-sm text-gray-400">Welcome back</Text>
+        <Text className="mb-8 font-poppins-bold text-3xl text-white">
+          What&apos;s in your fridge?
+        </Text>
 
-        <TouchableOpacity className="flex-row items-center justify-between rounded-3xl bg-white px-6 py-5 shadow-lg active:opacity-80">
-          <View>
-            <Text className="text-lg font-bold text-black">Scan Fridge</Text>
-            <Text className="text-sm font-medium text-gray-600">
-              Point your camera at your ingredients
-            </Text>
-          </View>
-          <SymbolView
-            tintColor="#000000"
-            name={{ ios: 'camera.fill', android: 'photo_camera', web: 'camera' }}
-            size={28}
-          />
-        </TouchableOpacity>
+        <Pressable className="overflow-hidden rounded-3xl shadow-lg active:opacity-80">
+          <LinearGradient
+            colors={['#3B82F6', '#22C55E']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="flex-row items-center justify-between px-6 py-5">
+            <View>
+              <Text className="font-poppins-semibold text-lg text-white">Scan Fridge</Text>
+              <Text className="font-poppins-regular text-sm text-white/80">
+                Point your camera at your ingredients
+              </Text>
+            </View>
+            <SymbolView
+              tintColor="#ffffff"
+              name={{ ios: 'camera.fill', android: 'photo_camera', web: 'camera' }}
+              size={28}
+            />
+          </LinearGradient>
+        </Pressable>
 
         <View className="mt-10 flex-row items-center justify-between">
-          <Text className="text-lg font-bold text-white">Recent Recipes</Text>
-          <Link href="/explore" className="text-sm font-semibold text-gray-400">
-            See all
-          </Link>
+          <Text className="font-poppins-semibold text-lg text-white">Recent Recipes</Text>
+          <Text className="font-poppins-medium text-sm text-gray-400">See all</Text>
         </View>
 
-        <View className="mt-4 items-center rounded-3xl border border-white/10 bg-white/5 px-6 py-10">
-          <Text className="text-center text-base font-medium text-gray-400">
-            No saved recipes yet. Scan your fridge to generate your first one!
-          </Text>
+        <View className="mt-4">
+          <EmptyState
+            title="No saved recipes yet"
+            subtitle="Scan your fridge to generate your first one!"
+            actionLabel="Scan Fridge"
+          />
         </View>
       </ScrollView>
     </View>

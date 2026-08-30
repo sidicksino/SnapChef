@@ -1,11 +1,48 @@
 /**
  * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
 import '@/global.css';
 
 import { Platform } from 'react-native';
+
+/**
+ * The SnapChef brand system (see mobile/assets/images/design-system.png).
+ * This is the source of truth for hex values; `tailwind.config.js` mirrors
+ * this same palette for NativeWind screens — keep both in sync.
+ */
+export const Brand = {
+  background: { primary: '#0B1220', secondary: '#111827' },
+  surface: { elevated: '#1F2937', card: '#1E293B' },
+  primary: { green: '#22C55E', leaf: '#16A34A', dark: '#0F172A', white: '#FFFFFF' },
+  secondary: { blue: '#3B82F6', amber: '#F59E0B', coral: '#FB7185', purple: '#B85CF6' },
+  gray: {
+    900: '#0B1220',
+    800: '#111827',
+    700: '#1F2937',
+    600: '#374151',
+    400: '#9CA3AF',
+    300: '#D1D5DB',
+    200: '#E5E7EB',
+    100: '#F3F4F6',
+  },
+  gradients: {
+    green: ['#22C55E', '#16A34A'],
+    fresh: ['#3B82F6', '#22C55E'],
+    warm: ['#F59E0B', '#FB7185'],
+  },
+} as const;
+
+/** The Poppins type ramp from the design system: [fontSize, lineHeight, letterSpacing]. */
+export const Type = {
+  h1: { fontSize: 32, lineHeight: 38, letterSpacing: -0.5, fontFamily: 'Poppins_700Bold' },
+  h2: { fontSize: 24, lineHeight: 30, letterSpacing: -0.25, fontFamily: 'Poppins_600SemiBold' },
+  h3: { fontSize: 20, lineHeight: 26, letterSpacing: 0, fontFamily: 'Poppins_600SemiBold' },
+  body1: { fontSize: 16, lineHeight: 24, letterSpacing: 0, fontFamily: 'Poppins_400Regular' },
+  body2: { fontSize: 14, lineHeight: 20, letterSpacing: 0, fontFamily: 'Poppins_400Regular' },
+  caption: { fontSize: 12, lineHeight: 16, letterSpacing: 0, fontFamily: 'Poppins_400Regular' },
+} as const;
 
 export const Colors = {
   light: {
@@ -17,10 +54,10 @@ export const Colors = {
   },
   dark: {
     text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    background: Brand.background.primary,
+    backgroundElement: Brand.surface.elevated,
+    backgroundSelected: Brand.surface.card,
+    textSecondary: Brand.gray[400],
   },
 } as const;
 
