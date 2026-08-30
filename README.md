@@ -24,6 +24,13 @@ fridge-recipe-generator/
 │   ├── train_colab.ipynb     # Google Colab notebook for training YOLOv8n
 │   └── train.py              # Local training script (alternative to Colab)
 │
+├── mobile/                   # Expo (React Native) mobile app
+│   ├── src/app/               # expo-router file-based routes
+│   ├── src/components/        # Shared UI components
+│   ├── src/global.css         # Tailwind directives (Nativewind)
+│   ├── tailwind.config.js     # Nativewind/Tailwind config
+│   └── app.json                # Expo app config
+│
 ├── .gitignore                # Git ignore rules
 ├── AGENT.md                  # Project context and rules for AI Agent
 ├── implementation_plan.md    # Master architecture and API design document

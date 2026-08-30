@@ -134,9 +134,12 @@ The backend will expose a RESTful API. Below are the core endpoints:
 - Export the PyTorch model to an `int8` quantized `.tflite` format for maximum on-device speed.
 
 ### Phase 3: Mobile App Frontend
-- Initialize Expo app with Nativewind (TailwindCSS) for styling.
-- Integrate `react-native-vision-camera` and `react-native-fast-tflite` to process frames and draw real-time bounding boxes.
-- Wire up the API calls to the Phase 1 backend.
+- `[x]` Initialize Expo app with Nativewind (TailwindCSS) for styling.
+  - Scaffolded via `create-expo-app` (SDK 57, `expo-router`, TypeScript, `src/app` structure) into `mobile/`.
+  - Nativewind v4 wired: `tailwind.config.js`, `babel.config.js`, `metro.config.js`, `src/global.css` (Tailwind directives), imported from `src/app/_layout.tsx`. Verified with `tsc --noEmit`, `expo-doctor`, and a static web export.
+  - Official Expo agent skills (26, from `expo/skills`) installed into `mobile/.claude/skills/` via `npx skills@latest add expo/skills --skill '*'` — the `/plugin install` route wasn't available in this environment, so skills were vendored as files instead (portable, git-committable, no marketplace step needed). Confirmed against `expo-tailwind-setup`: it now recommends Tailwind v4 + `react-native-css` + Nativewind v5 (preview/nightly) — deliberately stayed on the stable v4/v3 combo above instead; revisit once v5 leaves preview.
+- `[ ]` Integrate `react-native-vision-camera` and `react-native-fast-tflite` to process frames and draw real-time bounding boxes.
+- `[ ]` Wire up the API calls to the Phase 1 backend.
 
 ---
 ## User Review Required (Extended Backend Features)
