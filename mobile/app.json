@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "snapchef",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "ios": {
       "infoPlist": {
         "NSCameraUsageDescription": "SnapChef needs access to your Camera to detect food ingredients in your fridge."

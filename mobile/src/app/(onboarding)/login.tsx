@@ -3,7 +3,6 @@ import { Link, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,26 +15,35 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthTextField } from '@/components/auth-text-field';
 import { Button } from '@/components/button';
+import { FormError } from '@/components/form-error';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/contexts/toast-context';
+import { getApiErrorMessage } from '@/lib/api-client';
 
-// TODO(Integrate API task): swap this mock submit for a real
-// POST /api/auth/login call via the Axios client + expo-secure-store.
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { login } = useAuth();
+  const showToast = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canSubmit = email.trim().length > 0 && password.length > 0 && !submitting;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!canSubmit) return;
+    setError(null);
     setSubmitting(true);
-    // Placeholder until the backend is wired up.
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await login(email.trim(), password);
       router.replace('/home');
-    }, 400);
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Incorrect email or password.'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -70,7 +78,10 @@ export default function LoginScreen() {
             <AuthTextField
               label="Email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setError(null);
+              }}
               placeholder="you@example.com"
               autoCapitalize="none"
               autoCorrect={false}
@@ -80,7 +91,10 @@ export default function LoginScreen() {
             <AuthTextField
               label="Password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                setError(null);
+              }}
               placeholder="••••••••"
               secureTextEntry
               textContentType="password"
@@ -88,10 +102,12 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity
-            onPress={() => Alert.alert('Coming soon', 'Password reset is not wired up yet.')}
+            onPress={() => showToast('Password reset is not wired up yet.')}
             className="mt-4 self-end">
             <Text className="font-poppins-medium text-sm text-gray-400">Forgot password?</Text>
           </TouchableOpacity>
+
+          <FormError message={error} />
 
           <Button
             title="Log In"

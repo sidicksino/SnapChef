@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -21,10 +21,9 @@ export default function OnboardingScreen() {
           Centered in its own flex share of the screen (not flush to the
           status bar) so it has real breathing room above it. */}
       <View className="flex-[0.85] items-center justify-center overflow-hidden">
-        <LinearGradient
-          colors={['#111827', '#0B1220']}
-          className="absolute inset-0"
-        />
+        {/* NativeWind's className doesn't reliably position LinearGradient
+            on web (it's a native module, not a plain View) — use `style`. */}
+        <LinearGradient colors={['#111827', '#0B1220']} style={StyleSheet.absoluteFill} />
         <View className="h-56 w-56 items-center justify-center rounded-full bg-brand-green/10">
           <View className="h-40 w-40 items-center justify-center rounded-full bg-brand-green/15">
             <Image
@@ -36,7 +35,7 @@ export default function OnboardingScreen() {
         </View>
         <LinearGradient
           colors={['transparent', '#0B1220']}
-          className="absolute inset-x-0 bottom-0 h-24"
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 96 }}
         />
       </View>
 

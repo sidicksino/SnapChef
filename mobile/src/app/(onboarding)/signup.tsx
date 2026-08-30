@@ -15,31 +15,38 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuthTextField } from '@/components/auth-text-field';
 import { Button } from '@/components/button';
+import { FormError } from '@/components/form-error';
+import { useAuth } from '@/contexts/auth-context';
+import { getApiErrorMessage } from '@/lib/api-client';
 
-// TODO(Integrate API task): swap this mock submit for a real
-// POST /api/auth/register call via the Axios client + expo-secure-store.
 export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { register } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canSubmit =
     email.trim().length > 0 &&
-    password.length > 0 &&
+    password.length >= 8 &&
     password === confirmPassword &&
     !submitting;
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!canSubmit) return;
+    setError(null);
     setSubmitting(true);
-    // Placeholder until the backend is wired up.
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await register(email.trim(), password);
       router.replace('/home');
-    }, 400);
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not create your account.'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -74,7 +81,10 @@ export default function SignupScreen() {
             <AuthTextField
               label="Email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setError(null);
+              }}
               placeholder="you@example.com"
               autoCapitalize="none"
               autoCorrect={false}
@@ -84,7 +94,10 @@ export default function SignupScreen() {
             <AuthTextField
               label="Password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                setError(null);
+              }}
               placeholder="••••••••"
               secureTextEntry
               textContentType="newPassword"
@@ -92,12 +105,17 @@ export default function SignupScreen() {
             <AuthTextField
               label="Confirm password"
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={(text) => {
+                setConfirmPassword(text);
+                setError(null);
+              }}
               placeholder="••••••••"
               secureTextEntry
               textContentType="newPassword"
             />
           </View>
+
+          <FormError message={error} />
 
           <Button
             title="Create Account"
