@@ -8,7 +8,11 @@
     "scheme": "snapchef",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSCameraUsageDescription": "SnapChef needs access to your Camera to detect food ingredients in your fridge."
+      },
+      "bundleIdentifier": "com.anonymous.snapchef"
     },
     "android": {
       "adaptiveIcon": {
@@ -31,12 +35,6 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
-        }
-      ],
-      [
-        "react-native-vision-camera",
-        {
-          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera to detect food ingredients in your fridge."
         }
       ]
     ],
