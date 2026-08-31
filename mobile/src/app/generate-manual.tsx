@@ -1,5 +1,5 @@
 import { SymbolView } from 'expo-symbols';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
@@ -20,6 +20,20 @@ import { getApiErrorMessage } from '@/lib/api-client';
 import { mapGeneratedRecipeToCreatePayload, recipesApi, type RecipeResponse } from '@/lib/api';
 import { ScreenBackground } from '@/components/screen-background';
 
+// Parses the `detected` route param (a JSON string array of ingredient
+// names, passed from scan.tsx after on-device detection) back into a plain
+// array. Malformed/missing input just yields an empty starting list, same
+// as arriving here from "Enter ingredients manually" directly.
+function parseDetected(raw: string | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 // The manual-entry path to the same real POST /api/recipes/generate +
 // POST /api/recipes flow the camera will eventually feed — lets the whole
 // loop be exercised for real today, on any platform (including web, where
@@ -29,7 +43,9 @@ export default function GenerateManualScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const showToast = useToast();
-  const [ingredients, setIngredients] = useState<string[]>([]);
+  const { detected } = useLocalSearchParams<{ detected?: string }>();
+  const detectedIngredients = parseDetected(detected);
+  const [ingredients, setIngredients] = useState<string[]>(detectedIngredients);
   const [draft, setDraft] = useState('');
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -134,7 +150,9 @@ export default function GenerateManualScreen() {
           ) : (
             <View>
               <Text className="mb-6 font-poppins-regular text-base text-gray-300">
-                Add the ingredients you have on hand, and we&apos;ll generate a recipe from them.
+                {detectedIngredients.length > 0
+                  ? "Here's what we spotted in your photo — edit the list before generating."
+                  : "Add the ingredients you have on hand, and we'll generate a recipe from them."}
               </Text>
 
               <View className="mb-4 flex-row items-center gap-3 rounded-2xl border border-white/10 bg-surface-card px-5 py-4">

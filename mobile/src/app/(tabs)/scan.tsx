@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { StatusBar } from 'expo-status-bar';
@@ -8,22 +8,29 @@ import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput } from 're
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { showAlert } from '@/lib/alert';
+import { PhotoReview } from '@/components/photo-review';
+import { useToast } from '@/contexts/toast-context';
+import { detectIngredients } from '@/lib/ingredient-detector';
 import { ScreenBackground } from '@/components/screen-background';
 
-// The camera preview + capture flow only — feeding captures through the
-// on-device YOLOv8 ingredient model (react-native-fast-tflite,
-// assets/models/best_int8.tflite) is a separate follow-up pass, not
-// wired up yet. "Use Photo" below is honest about that instead of faking
-// detected ingredients.
+// The camera preview + capture flow, plus a "choose from library" path —
+// the iOS/Android Simulator has no real camera hardware at all, so picking
+// an existing photo is the only way to test this flow there (add one to
+// the Simulator's own Photos app first). "Use Photo" runs the captured or
+// picked image through the on-device YOLOv8 model
+// (react-native-fast-tflite, assets/models/best_int8.tflite) and hands the
+// detected ingredients to the same manual-entry/generate screen the
+// "Enter ingredients manually" link uses, pre-filled and still editable.
 export default function ScanScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const showToast = useToast();
   const { hasPermission, canRequestPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
   const photoOutput = usePhotoOutput();
-  const [capturedPath, setCapturedPath] = useState<string | null>(null);
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
+  const [detecting, setDetecting] = useState(false);
 
   useEffect(() => {
     if (!hasPermission && canRequestPermission) {
@@ -36,13 +43,58 @@ export default function ScanScreen() {
     setCapturing(true);
     try {
       const file = await photoOutput.capturePhotoToFile({}, {});
-      setCapturedPath(file.filePath);
+      setCapturedUri(`file://${file.filePath}`);
     } catch (error) {
-      showAlert('Capture failed', error instanceof Error ? error.message : String(error));
+      showToast(error instanceof Error ? error.message : 'Capture failed.');
     } finally {
       setCapturing(false);
     }
   };
+
+  const handlePickFromLibrary = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      showToast('Photo library access is needed to pick a picture.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setCapturedUri(result.assets[0].uri);
+    }
+  };
+
+  const handleUsePhoto = async () => {
+    if (!capturedUri || detecting) return;
+    setDetecting(true);
+    try {
+      const detections = await detectIngredients(capturedUri);
+      if (detections.length === 0) {
+        showToast("Couldn't confidently identify any ingredients — add them below instead.");
+      }
+      router.push({
+        pathname: '/generate-manual',
+        params: { detected: JSON.stringify(detections.map((d) => d.label)) },
+      });
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Could not analyze this photo.');
+    } finally {
+      setDetecting(false);
+    }
+  };
+
+  if (capturedUri) {
+    return (
+      <PhotoReview
+        uri={capturedUri}
+        onRetake={() => setCapturedUri(null)}
+        onUsePhoto={handleUsePhoto}
+        detecting={detecting}
+      />
+    );
+  }
 
   if (!hasPermission) {
     return (
@@ -65,6 +117,12 @@ export default function ScanScreen() {
             onPress={canRequestPermission ? requestPermission : () => Linking.openSettings()}
           />
           <Button
+            title="Choose from Library"
+            variant="secondary"
+            onPress={handlePickFromLibrary}
+            className="mt-3 w-full"
+          />
+          <Button
             title="Enter Ingredients Manually"
             variant="text"
             onPress={() => router.push('/generate-manual')}
@@ -80,42 +138,27 @@ export default function ScanScreen() {
       <ScreenBackground>
         <View className="flex-1 items-center justify-center px-8">
           <StatusBar style="light" />
-          <Text className="mb-6 text-center font-poppins-regular text-base text-gray-400">
-            No camera device found on this device.
+          <SymbolView
+            tintColor="#6B7280"
+            name={{ ios: 'photo.on.rectangle', android: 'photo_library', web: 'photo_library' }}
+            size={40}
+          />
+          <Text className="mb-2 mt-4 text-center font-poppins-semibold text-lg text-white">
+            No camera on this device
           </Text>
-          <Button title="Enter Ingredients Manually" onPress={() => router.push('/generate-manual')} />
+          <Text className="mb-6 text-center font-poppins-regular text-sm text-gray-400">
+            The Simulator has no real camera — add a photo to its Photos app first, then choose it
+            below.
+          </Text>
+          <Button title="Choose from Library" onPress={handlePickFromLibrary} className="w-full" />
+          <Button
+            title="Enter Ingredients Manually"
+            variant="text"
+            onPress={() => router.push('/generate-manual')}
+            className="mt-2"
+          />
         </View>
       </ScreenBackground>
-    );
-  }
-
-  if (capturedPath) {
-    return (
-      <View className="flex-1 bg-bg-primary">
-        <StatusBar style="light" />
-        <Image source={{ uri: `file://${capturedPath}` }} style={{ flex: 1 }} contentFit="cover" />
-        <View
-          className="absolute inset-x-0 bottom-0 flex-row gap-4 px-8"
-          style={{ paddingBottom: insets.bottom + 140 }}>
-          <Button
-            title="Retake"
-            variant="secondary"
-            onPress={() => setCapturedPath(null)}
-            className="flex-1"
-          />
-          <Button
-            title="Use Photo"
-            variant="primary"
-            onPress={() =>
-              showAlert(
-                'Coming soon',
-                'Ingredient detection from this photo is not wired up yet.'
-              )
-            }
-            className="flex-1"
-          />
-        </View>
-      </View>
     );
   }
 
@@ -145,19 +188,37 @@ export default function ScanScreen() {
         />
       </Pressable>
 
-      <View className="absolute inset-x-0 items-center gap-4" style={{ bottom: insets.bottom + 130 }}>
+      <View
+        className="absolute inset-x-0 flex-row items-center justify-center gap-8"
+        style={{ bottom: insets.bottom + 130 }}>
+        {/* Gallery button — same corner Snapchat/Instagram/TikTok put it in,
+            beside the shutter rather than buried in a menu. */}
+        <Pressable
+          onPress={handlePickFromLibrary}
+          className="h-12 w-12 items-center justify-center rounded-full bg-black/40 active:opacity-70">
+          <SymbolView
+            tintColor="#ffffff"
+            name={{ ios: 'photo.on.rectangle', android: 'photo_library', web: 'photo_library' }}
+            size={20}
+          />
+        </Pressable>
         <Pressable
           onPress={handleCapture}
           disabled={capturing}
           className="h-20 w-20 items-center justify-center rounded-full border-4 border-white/90 active:opacity-70 disabled:opacity-50">
           <View className="h-16 w-16 rounded-full bg-white" />
         </Pressable>
-        <Pressable onPress={() => router.push('/generate-manual')} className="active:opacity-70">
-          <Text className="font-poppins-medium text-sm text-white/80">
-            Or enter ingredients manually
-          </Text>
-        </Pressable>
+        <View className="w-12" />
       </View>
+
+      <Pressable
+        onPress={() => router.push('/generate-manual')}
+        className="absolute inset-x-0 items-center active:opacity-70"
+        style={{ bottom: insets.bottom + 70 }}>
+        <Text className="font-poppins-medium text-sm text-white/80">
+          Or enter ingredients manually
+        </Text>
+      </Pressable>
     </View>
   );
 }

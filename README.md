@@ -84,3 +84,45 @@ fastapi dev main.py
 ### 7. View the API Documentation
 Once the server is running, you can view the interactive API documentation and test the endpoints directly in your browser:
 - **Swagger UI:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+
+Without an `OPENAI_API_KEY`, everything works except recipe generation
+(`POST /api/recipes/generate`) — that specific endpoint returns a real
+`500 {"detail": "OpenAI API key not configured"}` until a key is added.
+
+## How to Run the Mobile App
+
+The backend must already be running (see above) — the app talks to it over
+the network, not by embedding it.
+
+### 1. Install dependencies
+```bash
+cd mobile
+npm install
+```
+
+### 2. Start the dev server
+```bash
+npx expo start
+```
+Press `i` for the iOS Simulator, `a` for an Android emulator, or `w` for
+the web preview. A physical device needs the Expo Dev Client build below
+installed first, then scan the QR code from the same terminal.
+
+### 3. Native builds (required once for camera features)
+`react-native-vision-camera` and `react-native-fast-tflite` are native
+modules — Expo Go can't run this app. The first time (or after adding a
+native dependency), build a real dev client instead of just `expo start`:
+```bash
+npx expo run:ios      # or: npx expo run:android
+```
+This compiles the app with Xcode/Gradle and installs it on a
+simulator/emulator or connected device. After that, `npx expo start` alone
+is enough for day-to-day JS changes — Fast Refresh picks them up without
+rebuilding.
+
+### 4. Finding the backend from a real device
+The app auto-detects the backend's address from whatever host Metro itself
+is running on, so no manual IP configuration is needed on a simulator or a
+physical device on the same Wi-Fi network as your Mac. To point at a
+different backend (e.g. a deployed one), set `EXPO_PUBLIC_API_URL` in
+`mobile/.env` or your shell environment before starting Expo.

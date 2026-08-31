@@ -9,9 +9,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "infoPlist": {
-        "NSCameraUsageDescription": "SnapChef needs access to your Camera to detect food ingredients in your fridge."
+        "NSCameraUsageDescription": "SnapChef needs access to your Camera to detect food ingredients in your fridge.",
+        "NSPhotoLibraryUsageDescription": "SnapChef needs access to your photos so you can pick a picture of your ingredients to scan."
       },
-      "bundleIdentifier": "com.anonymous.snapchef"
+      "bundleIdentifier": "com.sidicksino.snapchef"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +21,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.sidicksino.snapchef"
     },
     "web": {
       "output": "static",
@@ -36,7 +38,15 @@
           "imageWidth": 120
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "SnapChef needs access to your photos so you can pick a picture of your ingredients to scan.",
+          "cameraPermission": "SnapChef needs access to your Camera to detect food ingredients in your fridge.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -50,6 +50,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, logout, setUser } = useAuth();
+  const showToast = useToast();
   const [savedCount, setSavedCount] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
@@ -88,7 +89,7 @@ export default function ProfileScreen() {
       const { data } = await usersApi.updateMe(next);
       setUser(data);
     } catch (error) {
-      showAlert('Could not update', getApiErrorMessage(error));
+      showToast(getApiErrorMessage(error, 'Could not update your preferences.'));
     } finally {
       setSavingPrefs(false);
     }

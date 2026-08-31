@@ -13,8 +13,15 @@ from deps import get_current_user
 
 router = APIRouter(prefix="/api/recipes", tags=["recipes"])
 
-api_key = os.getenv("OPENAI_API_KEY")
-client = AsyncOpenAI(api_key=api_key) if api_key else None
+# Gemini, via Google's OpenAI-compatibility endpoint — keeps the same
+# `openai` SDK and the exact same `.beta.chat.completions.parse(...)`
+# structured-output call used below, just a different base_url/model/key.
+# https://ai.google.dev/gemini-api/docs/openai
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+GEMINI_MODEL = "gemini-3.7-flash"
+
+api_key = os.getenv("GEMIMIAI_API_KEY")
+client = AsyncOpenAI(api_key=api_key, base_url=GEMINI_BASE_URL) if api_key else None
 
 @router.post("/generate", response_model=RecipeResponse)
 async def generate_recipe(
@@ -22,7 +29,7 @@ async def generate_recipe(
     current_user: User = Depends(get_current_user)
 ):
     if not client:
-        raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+        raise HTTPException(status_code=500, detail="Gemini API key not configured")
     
     if not request.ingredients:
         raise HTTPException(status_code=400, detail="Ingredients list cannot be empty")
@@ -38,7 +45,7 @@ async def generate_recipe(
 
     try:
         completion = await client.beta.chat.completions.parse(
-            model="gpt-4o",
+            model=GEMINI_MODEL,
             messages=[
                 {"role": "system", "content": "You are an expert chef. Generate structured recipes based on the provided ingredients."},
                 {"role": "user", "content": prompt}
