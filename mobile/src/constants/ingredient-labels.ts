@@ -1,4 +1,4 @@
-// The 120 class names `assets/models/best_int8.tflite` was trained to detect,
+// The 120 class names `assets/models/best.tflite` was trained to detect,
 // in the exact index order baked into the model's output tensor (index N in
 // this array === channel N of the model's [1, 124, 2100] output, after the
 // first 4 bbox channels). Order matters — do not sort or edit this list.

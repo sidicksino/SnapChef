@@ -3,21 +3,35 @@ import { loadTensorflowModel, type TensorflowModel } from 'react-native-fast-tfl
 
 import { INGREDIENT_LABELS } from '@/constants/ingredient-labels';
 
-// assets/models/best_int8.tflite is a YOLOv8n object-detection model, read
+// assets/models/best.tflite is a YOLOv8n object-detection model, read
 // straight from its own tensor graph (no bundled metadata exists):
 //   input:  [1, 3, 320, 320]  — 320x320 RGB, channel-first (NCHW)
 //   output: [1, 124, 2100]    — 4 box channels + 120 class channels, 2100
 //                                anchors (matches 320x320: 40²+20²+10²)
-// Both tensors are float32 — the quantized int8 math is wrapped internally
-// with quantize/dequantize ops, so this file never touches int8 directly.
+// Both tensors are plain float32 — deliberately exported *without* int8
+// quantization. An earlier int8 export threw `TFLite: Failed to run TFLite
+// Model!` on every device (Simulator and a real iPhone alike) — root-caused
+// to a newer TFLite/LiteRT conversion pipeline producing an op pattern
+// react-native-fast-tflite's pinned TensorFlowLiteC (2.17.0) can't execute,
+// confirmed by running the exact int8 file successfully through Google's
+// own newer official runtime. This float32 re-export was verified against
+// TensorFlowLiteC 2.17.0 itself (the exact version pinned in
+// react-native-fast-tflite's iOS podspec) before ever touching a device.
 const MODEL_INPUT_SIZE = 320;
 const NUM_CLASSES = INGREDIENT_LABELS.length; // 120
 const BOX_CHANNELS = 4;
 
 // A class only needs to clear this once, on any anchor, to count as
 // "present" — see the note on detectIngredients below for why this skips
-// spatial NMS entirely.
-const CONFIDENCE_THRESHOLD = 0.45;
+// spatial NMS entirely. Started at 0.45 (a typical YOLO default), then
+// 0.25 — both too strict in real-device testing: a real test photo's
+// *correct* top scores (Capsicum 0.285, Tomato 0.198, Banana 0.146,
+// Onion Leaves 0.099 — all genuinely in the photo) mostly sat under 0.25.
+// Expected for a nano model trained on ~9.8k crowdsourced images across
+// 120 classes (val mAP50 ≈ 0.50) — this is not miscalibration to "fix",
+// it's the model's real accuracy. Lower catches more true positives at
+// the cost of more false ones; revisit with more real-photo testing.
+const CONFIDENCE_THRESHOLD = 0.12;
 
 export type Detection = {
   label: string;
@@ -28,7 +42,7 @@ let modelPromise: Promise<TensorflowModel> | null = null;
 
 function getModel(): Promise<TensorflowModel> {
   if (!modelPromise) {
-    modelPromise = loadTensorflowModel(require('../../assets/models/best_int8.tflite'), []).then(
+    modelPromise = loadTensorflowModel(require('../../assets/models/best.tflite'), []).then(
       (model) => {
         assertExpectedShape(model);
         return model;
@@ -45,7 +59,7 @@ function assertExpectedShape(model: TensorflowModel) {
   const outputOk = output?.shape[1] === BOX_CHANNELS + NUM_CLASSES;
   if (!inputOk || !outputOk) {
     throw new Error(
-      `best_int8.tflite has an unexpected shape (input ${input?.shape}, output ${output?.shape}) — ` +
+      `best.tflite has an unexpected shape (input ${input?.shape}, output ${output?.shape}) — ` +
         'ingredient-labels.ts was written for a 320x320 / 120-class model and needs updating to match.'
     );
   }
@@ -107,7 +121,7 @@ export async function detectIngredients(uri: string): Promise<Detection[]> {
   const output = new Float32Array(outputBuffer);
   const numAnchors = output.length / (BOX_CHANNELS + NUM_CLASSES);
 
-  const detections: Detection[] = [];
+  const allScores: Detection[] = [];
   for (let c = 0; c < NUM_CLASSES; c++) {
     const rowOffset = (BOX_CHANNELS + c) * numAnchors;
     let max = 0;
@@ -115,10 +129,21 @@ export async function detectIngredients(uri: string): Promise<Detection[]> {
       const score = output[rowOffset + a];
       if (score > max) max = score;
     }
-    if (max >= CONFIDENCE_THRESHOLD) {
-      detections.push({ label: INGREDIENT_LABELS[c], confidence: max });
-    }
+    allScores.push({ label: INGREDIENT_LABELS[c], confidence: max });
   }
+  allScores.sort((a, b) => b.confidence - a.confidence);
+
+  // Tuning aid: log the top scores regardless of threshold, so a run that
+  // finds nothing still shows what the model was actually seeing.
+  console.log(
+    'Top 8 raw class scores:',
+    allScores
+      .slice(0, 8)
+      .map((d) => `${d.label}=${d.confidence.toFixed(3)}`)
+      .join(', ')
+  );
+
+  const detections = allScores.filter((d) => d.confidence >= CONFIDENCE_THRESHOLD);
 
   return detections.sort((a, b) => b.confidence - a.confidence);
 }

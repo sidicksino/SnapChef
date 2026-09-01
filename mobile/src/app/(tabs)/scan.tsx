@@ -18,7 +18,7 @@ import { ScreenBackground } from '@/components/screen-background';
 // an existing photo is the only way to test this flow there (add one to
 // the Simulator's own Photos app first). "Use Photo" runs the captured or
 // picked image through the on-device YOLOv8 model
-// (react-native-fast-tflite, assets/models/best_int8.tflite) and hands the
+// (react-native-fast-tflite, assets/models/best.tflite) and hands the
 // detected ingredients to the same manual-entry/generate screen the
 // "Enter ingredients manually" link uses, pre-filled and still editable.
 export default function ScanScreen() {
