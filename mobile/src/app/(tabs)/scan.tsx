@@ -1,13 +1,14 @@
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import { Camera, useCameraDevice, useCameraPermission, usePhotoOutput } from 'react-native-vision-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { DetectingIngredients } from '@/components/detecting-ingredients';
 import { PhotoReview } from '@/components/photo-review';
 import { useToast } from '@/contexts/toast-context';
 import { detectIngredients } from '@/lib/ingredient-detector';
@@ -25,12 +26,14 @@ export default function ScanScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const showToast = useToast();
+  const { autoPick } = useLocalSearchParams<{ autoPick?: string }>();
   const { hasPermission, canRequestPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('back');
   const photoOutput = usePhotoOutput();
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
   const [detecting, setDetecting] = useState(false);
+  const autoPickHandled = useRef(false);
 
   useEffect(() => {
     if (!hasPermission && canRequestPermission) {
@@ -66,6 +69,19 @@ export default function ScanScreen() {
     }
   };
 
+  // Home's "Upload Photo" tile navigates here with ?autoPick=1 so it opens
+  // straight into the library picker instead of duplicating this whole
+  // permission/review/detect flow on the Home screen. Fires once per visit
+  // — a ref (not just checking capturedUri) so tapping "Retake" afterwards
+  // doesn't re-trigger the picker.
+  useEffect(() => {
+    if (autoPick === '1' && !autoPickHandled.current) {
+      autoPickHandled.current = true;
+      handlePickFromLibrary();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPick]);
+
   const handleUsePhoto = async () => {
     if (!capturedUri || detecting) return;
     setDetecting(true);
@@ -85,14 +101,13 @@ export default function ScanScreen() {
     }
   };
 
+  if (detecting) {
+    return <DetectingIngredients />;
+  }
+
   if (capturedUri) {
     return (
-      <PhotoReview
-        uri={capturedUri}
-        onRetake={() => setCapturedUri(null)}
-        onUsePhoto={handleUsePhoto}
-        detecting={detecting}
-      />
+      <PhotoReview uri={capturedUri} onRetake={() => setCapturedUri(null)} onUsePhoto={handleUsePhoto} />
     );
   }
 

@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import os
 from dotenv import load_dotenv
 
@@ -26,6 +27,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serves generated recipe images (backend/static/recipe_images/*.png) at
+# /static/... — recipes.py writes into this same directory and returns
+# image_url as that relative path, which the mobile app resolves against
+# whatever host it's already talking to for the API itself.
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+os.makedirs(static_dir, exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Mount all Routers
 app.include_router(auth.router)

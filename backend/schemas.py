@@ -35,6 +35,14 @@ class RecipeResponse(BaseModel):
     estimated_time: int
     nutritional_info: Optional[str] = None
 
+# Deliberately NOT adding image_url onto RecipeResponse itself — that model
+# is also passed as `response_format` to the LLM's structured-output call,
+# so any field on it is something the LLM is asked to fill in. The image is
+# generated separately, after the text, so it gets its own response model
+# that extends RecipeResponse rather than mutating the shared one.
+class RecipeGenerateResponse(RecipeResponse):
+    image_url: Optional[str] = None
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
@@ -60,6 +68,7 @@ class RecipeCreate(BaseModel):
     prep_time_minutes: int
     cook_time_minutes: int
     ingredients: List[RecipeIngredientSchema]
+    image_url: Optional[str] = None
 
 class RecipeOut(RecipeCreate):
     id: int

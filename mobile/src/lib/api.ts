@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api-client';
+import { API_BASE_URL, apiClient } from '@/lib/api-client';
 
 // Types mirror backend/schemas.py exactly — see that file, not this comment,
 // as the source of truth if they ever drift.
@@ -22,6 +22,7 @@ export type RecipeOut = {
   prep_time_minutes: number;
   cook_time_minutes: number;
   ingredients: RecipeIngredient[];
+  image_url?: string | null;
   created_at: string;
 };
 
@@ -37,6 +38,7 @@ export type RecipeResponse = {
   instructions: string[];
   estimated_time: number;
   nutritional_info?: string | null;
+  image_url?: string | null;
 };
 
 export type RecipeCreatePayload = {
@@ -46,7 +48,18 @@ export type RecipeCreatePayload = {
   prep_time_minutes: number;
   cook_time_minutes: number;
   ingredients: RecipeIngredient[];
+  image_url?: string | null;
 };
+
+/** Recipe images are served from the backend's own /static route as a
+ * relative path (e.g. "/static/recipe_images/xyz.png") — resolve it
+ * against whatever host the app is already talking to for the API, same
+ * as every other request, rather than hardcoding a host. */
+export function resolveRecipeImageUrl(imageUrl: string | null | undefined): string | undefined {
+  if (!imageUrl) return undefined;
+  if (/^https?:\/\//.test(imageUrl)) return imageUrl;
+  return `${API_BASE_URL}${imageUrl}`;
+}
 
 export const authApi = {
   register: (email: string, password: string) =>
@@ -71,8 +84,15 @@ export const usersApi = {
 
 export const recipesApi = {
   list: () => apiClient.get<RecipeOut[]>('/api/recipes'),
+  // Longer timeout than the client default (15s) — this now does a text
+  // generation call *and* an image generation call server-side, which can
+  // together take longer than that, especially on a slower connection.
   generate: (ingredients: string[]) =>
-    apiClient.post<RecipeResponse>('/api/recipes/generate', { ingredients }),
+    apiClient.post<RecipeResponse>(
+      '/api/recipes/generate',
+      { ingredients },
+      { timeout: 60000 }
+    ),
   save: (payload: RecipeCreatePayload) => apiClient.post<RecipeOut>('/api/recipes', payload),
 };
 
@@ -91,5 +111,6 @@ export function mapGeneratedRecipeToCreatePayload(recipe: RecipeResponse): Recip
     prep_time_minutes: prep,
     cook_time_minutes: Math.max(recipe.estimated_time - prep, 0),
     ingredients: recipe.ingredients.map((name) => ({ name, amount: '' })),
+    image_url: recipe.image_url,
   };
 }

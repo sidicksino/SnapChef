@@ -100,8 +100,12 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ffffff" />
         }>
         <View className="px-6">
-          <Text className="font-poppins-medium text-sm text-gray-400">Welcome back</Text>
-          <Text className="mb-8 font-poppins-bold text-3xl text-white">
+          <View className="mb-6 flex-row items-baseline">
+            <Text className="font-poppins-bold text-2xl text-white">Snap</Text>
+            <Text className="font-poppins-bold text-2xl text-brand-green">Chef</Text>
+          </View>
+
+          <Text className="mb-4 font-poppins-bold text-3xl text-white">
             What&apos;s in your fridge?
           </Text>
 
@@ -114,19 +118,45 @@ export default function HomeScreen() {
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
-            <View className="flex-row items-center justify-between px-6 py-5">
-              <View>
-                <Text className="font-poppins-semibold text-lg text-white">Scan Fridge</Text>
-                <Text className="font-poppins-regular text-sm text-white/80">
-                  Point your camera at your ingredients
-                </Text>
+            <View className="flex-row items-center gap-4 px-5 py-4">
+              <View className="h-12 w-12 items-center justify-center rounded-2xl bg-white/20">
+                <SymbolView
+                  tintColor="#ffffff"
+                  name={{ ios: 'camera.fill', android: 'photo_camera', web: 'camera' }}
+                  size={22}
+                />
+              </View>
+              <View className="flex-1">
+                <Text className="font-poppins-semibold text-base text-white">Scan Fridge</Text>
+                <Text className="font-poppins-regular text-sm text-white/80">Take a photo</Text>
               </View>
               <SymbolView
-                tintColor="#ffffff"
-                name={{ ios: 'camera.fill', android: 'photo_camera', web: 'camera' }}
-                size={28}
+                tintColor="rgba(255,255,255,0.7)"
+                name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                size={16}
               />
             </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push({ pathname: '/scan', params: { autoPick: '1' } })}
+            className="mb-3 flex-row items-center gap-4 rounded-3xl border border-white/10 bg-surface-card px-5 py-4 active:opacity-70">
+            <View className="h-12 w-12 items-center justify-center rounded-2xl bg-brand-green/15">
+              <SymbolView
+                tintColor="#22C55E"
+                name={{ ios: 'photo.on.rectangle', android: 'photo_library', web: 'photo_library' }}
+                size={22}
+              />
+            </View>
+            <View className="flex-1">
+              <Text className="font-poppins-semibold text-base text-white">Upload Photo</Text>
+              <Text className="font-poppins-regular text-sm text-gray-400">Choose from gallery</Text>
+            </View>
+            <SymbolView
+              tintColor="#6B7280"
+              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+              size={16}
+            />
           </Pressable>
 
           <Pressable

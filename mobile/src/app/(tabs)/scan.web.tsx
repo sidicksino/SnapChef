@@ -1,8 +1,8 @@
 import * as ImagePicker from 'expo-image-picker';
 import { SymbolView } from 'expo-symbols';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -19,7 +19,9 @@ import { ScreenBackground } from '@/components/screen-background';
 export default function ScanScreenWeb() {
   const router = useRouter();
   const showToast = useToast();
+  const { autoPick } = useLocalSearchParams<{ autoPick?: string }>();
   const [pickedUri, setPickedUri] = useState<string | null>(null);
+  const autoPickHandled = useRef(false);
 
   const handlePickPhoto = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -30,6 +32,15 @@ export default function ScanScreenWeb() {
       setPickedUri(result.assets[0].uri);
     }
   };
+
+  // Home's "Upload Photo" tile navigates here with ?autoPick=1 so it opens
+  // straight into the picker instead of duplicating this flow on Home.
+  useEffect(() => {
+    if (autoPick === '1' && !autoPickHandled.current) {
+      autoPickHandled.current = true;
+      handlePickPhoto();
+    }
+  }, [autoPick]);
 
   if (pickedUri) {
     return (

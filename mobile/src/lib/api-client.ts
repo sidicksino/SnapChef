@@ -68,6 +68,10 @@ export function getApiErrorMessage(error: unknown, fallback = 'Something went wr
   if (isAxiosError(error)) {
     const detail = error.response?.data?.detail;
     if (typeof detail === 'string') return detail;
+    // A timeout still reached the server (or never got a response in time)
+    // — distinct from truly being unreachable, and worth saying so, since
+    // "check your connection" is misleading when the connection was fine.
+    if (error.code === 'ECONNABORTED') return 'That took too long — please try again.';
     if (!error.response) return 'Could not reach the server. Check your connection.';
   }
   return fallback;
