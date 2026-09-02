@@ -12,7 +12,11 @@ import { Brand } from '@/constants/theme';
 // stitched together. This replaces both with one consistent look.
 export function ScreenBackground({ children }: { children: React.ReactNode }) {
   return (
-    <View className="flex-1">
+    // Explicit position:'relative' — some screens pin an absolutely (or, on
+    // web, 'fixed') positioned child directly here, like a top status-bar
+    // protector, and web needs an explicitly positioned ancestor for that
+    // to anchor against (native's Yoga layout doesn't).
+    <View className="flex-1" style={{ position: 'relative' }}>
       <LinearGradient
         colors={[Brand.secondary.purple, Brand.background.primary]}
         start={{ x: 0.5, y: 0 }}
