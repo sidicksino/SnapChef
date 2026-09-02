@@ -55,10 +55,12 @@ const GRID_SIDE_PADDING = 24;
 const GRID_CARD_GAP = 16;
 
 // The most recent recipe (recipes[0] — the list is already newest-first)
-// gets a big featured card up top; everything else scrolls horizontally in
-// pairs (2 rows tall per swipe) rather than one long single-row strip, so
-// the section reads as "your latest, then browse the rest" instead of a
-// flat list — and fits far more without the page needing to scroll as far.
+// gets a big featured card up top; everything else lays out as a plain
+// 2-per-row grid that scrolls with the rest of the page. An earlier version
+// tried a horizontally-scrolling row of stacked pairs instead, but that
+// nested scroll region kept fighting the page's own vertical scroll across
+// several real-device tests — this is simpler and doesn't have that problem
+// at all, since there's no second scroll surface to conflict with.
 function RecentRecipes({ recipes, onPressRecipe }: { recipes: RecipeOut[]; onPressRecipe: (id: number) => void }) {
   const { width: screenWidth } = useWindowDimensions();
   const [featured, ...rest] = recipes;
