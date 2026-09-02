@@ -1,7 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { ActivityIndicator, Pressable, Text, type PressableProps } from 'react-native';
 
-type ButtonVariant = 'primary' | 'outline' | 'secondary' | 'text';
+type ButtonVariant = 'primary' | 'outline' | 'secondary' | 'text' | 'danger';
 
 type ButtonProps = Omit<PressableProps, 'children'> & {
   title: string;
@@ -17,6 +17,8 @@ const containerByVariant: Record<ButtonVariant, string> = {
   secondary:
     'flex-row items-center justify-center rounded-full bg-surface-elevated py-4 active:opacity-70 disabled:opacity-40',
   text: 'flex-row items-center justify-center gap-1 py-2 active:opacity-60 disabled:opacity-40',
+  danger:
+    'flex-row items-center justify-center rounded-full border border-accent-coral bg-transparent py-4 active:opacity-70 disabled:opacity-40',
 };
 
 const labelByVariant: Record<ButtonVariant, string> = {
@@ -24,6 +26,17 @@ const labelByVariant: Record<ButtonVariant, string> = {
   outline: 'font-poppins-semibold text-lg text-brand-green',
   secondary: 'font-poppins-semibold text-lg text-white',
   text: 'font-poppins-medium text-base text-gray-300',
+  danger: 'font-poppins-semibold text-lg text-accent-coral',
+};
+
+// Matches labelByVariant's colors — the loading spinner replaces the label,
+// so it should read as the same color the text would have been.
+const spinnerColorByVariant: Record<ButtonVariant, string> = {
+  primary: '#ffffff',
+  outline: '#22C55E',
+  secondary: '#ffffff',
+  text: '#22C55E',
+  danger: '#FB7185',
 };
 
 // Primary/Outline/Secondary/Text button variants from the SnapChef design
@@ -43,9 +56,7 @@ export function Button({
       className={`${containerByVariant[variant]}${className ? ` ${className}` : ''}`}
       {...props}>
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' || variant === 'secondary' ? '#ffffff' : '#22C55E'}
-        />
+        <ActivityIndicator color={spinnerColorByVariant[variant]} />
       ) : (
         <Text className={labelByVariant[variant]}>{title}</Text>
       )}

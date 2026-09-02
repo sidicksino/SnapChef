@@ -8,12 +8,14 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { getApiErrorMessage } from '@/lib/api-client';
 import { getDifficulty } from '@/lib/recipe-presentation';
 import { getIngredientIconFuzzy } from '@/constants/ingredient-icons';
 import { recipesApi, resolveRecipeImageUrl, type RecipeOut } from '@/lib/api';
 import { ScreenBackground } from '@/components/screen-background';
+import { useToast } from '@/contexts/toast-context';
 
 // A saved recipe's detail view — reached by tapping any RecipeCard (Home's
 // featured/grid cards, Saved's masonry grid). Fetches fresh by id (GET
@@ -28,9 +30,12 @@ import { ScreenBackground } from '@/components/screen-background';
 export default function RecipeDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const showToast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [recipe, setRecipe] = useState<RecipeOut | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -46,6 +51,20 @@ export default function RecipeDetailScreen() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
+
+  const handleDelete = async () => {
+    if (!recipe || deleting) return;
+    setDeleting(true);
+    try {
+      await recipesApi.delete(recipe.id);
+      router.replace('/saved');
+    } catch (err) {
+      setConfirmingDelete(false);
+      showToast(getApiErrorMessage(err, "Couldn't delete this recipe."));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const imageUri = resolveRecipeImageUrl(recipe?.image_url);
 
@@ -105,6 +124,12 @@ export default function RecipeDetailScreen() {
               style={{ left: 20, top: insets.top + 12 }}>
               <SymbolView tintColor="#ffffff" name={{ ios: 'xmark', android: 'close', web: 'close' }} size={16} />
             </Pressable>
+            <Pressable
+              onPress={() => setConfirmingDelete(true)}
+              className="absolute h-10 w-10 items-center justify-center rounded-full bg-black/40 active:opacity-70"
+              style={{ right: 20, top: insets.top + 12 }}>
+              <SymbolView tintColor="#FB7185" name={{ ios: 'trash', android: 'delete', web: 'delete' }} size={16} />
+            </Pressable>
           </View>
 
           <View className="px-6 pt-5">
@@ -158,6 +183,17 @@ export default function RecipeDetailScreen() {
           </View>
         </ScrollView>
       )}
+
+      <ConfirmDialog
+        visible={confirmingDelete}
+        title="Delete this recipe?"
+        message={recipe ? `"${recipe.title}" will be removed from your cookbook. This can't be undone.` : ''}
+        confirmLabel="Delete Recipe"
+        destructive
+        loading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </ScreenBackground>
   );
 }

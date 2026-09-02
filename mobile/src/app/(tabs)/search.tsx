@@ -1,22 +1,87 @@
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
 import { getApiErrorMessage } from '@/lib/api-client';
 import { getDifficulty, getRecipePresentation } from '@/lib/recipe-presentation';
+import { PageHeader } from '@/components/page-header';
 import { recipesApi, resolveRecipeImageUrl, type RecipeOut } from '@/lib/api';
-import { RecipeCard } from '@/components/recipe-card';
 import { ScreenBackground } from '@/components/screen-background';
 import { TAB_BAR_CLEARANCE } from '@/components/tab-bar';
 
-// Same staggered-masonry look as saved.tsx — search results are the same
-// recipes, just filtered, so they get the same visual language rather than
-// a different layout for no real reason.
-const HEIGHTS = [150, 190, 130, 170, 210, 140, 180, 160, 200, 145];
+// A row, not a grid card — deliberately simpler than Home/Saved's card
+// layout: small square thumbnail, title + meta, chevron. Search results
+// read better as a scannable list than a two-column gallery.
+function SearchResultRow({ recipe, onPress }: { recipe: RecipeOut; onPress: () => void }) {
+  const presentation = getRecipePresentation(recipe.id);
+  const imageUri = resolveRecipeImageUrl(recipe.image_url);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      className="mb-3 flex-row items-center gap-4 rounded-2xl border border-white/10 bg-surface-card p-3 active:opacity-70">
+      <View className="h-16 w-16 overflow-hidden rounded-xl">
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        ) : (
+          <LinearGradient
+            colors={presentation.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}>
+            <View className="flex-1 items-center justify-center">
+              <SymbolView
+                tintColor="rgba(255,255,255,0.6)"
+                name={{ ios: presentation.icon, android: presentation.iconAndroid, web: presentation.iconAndroid }}
+                size={26}
+              />
+            </View>
+          </LinearGradient>
+        )}
+      </View>
+
+      <View className="flex-1">
+        <Text numberOfLines={1} className="font-poppins-semibold text-base text-white">
+          {recipe.title}
+        </Text>
+        <View className="mt-1 flex-row items-center gap-3">
+          <View className="flex-row items-center gap-1">
+            <SymbolView tintColor="#9CA3AF" name={{ ios: 'clock', android: 'schedule', web: 'schedule' }} size={12} />
+            <Text className="font-poppins-regular text-xs text-gray-400">
+              {recipe.prep_time_minutes + recipe.cook_time_minutes} min
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-1">
+            <SymbolView
+              tintColor="#9CA3AF"
+              name={{ ios: 'flame', android: 'local_fire_department', web: 'local_fire_department' }}
+              size={12}
+            />
+            <Text className="font-poppins-regular text-xs text-gray-400">
+              {getDifficulty(recipe.prep_time_minutes, recipe.cook_time_minutes)}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <SymbolView tintColor="#6B7280" name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} size={16} />
+    </Pressable>
+  );
+}
 
 // Real search over your own saved recipes — matches the query against a
 // recipe's title or any of its ingredient names (both, since the search
@@ -58,28 +123,18 @@ export default function SearchScreen() {
     );
   }, [recipes, query]);
 
-  const [leftColumn, rightColumn] = useMemo(() => {
-    const left: RecipeOut[] = [];
-    const right: RecipeOut[] = [];
-    (results ?? []).forEach((recipe, index) => {
-      (index % 2 === 0 ? left : right).push(recipe);
-    });
-    return [left, right];
-  }, [results]);
-
   return (
     <ScreenBackground>
       <StatusBar style="light" />
+      <PageHeader title="Search" />
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 24,
+          paddingTop: 8,
           paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
         }}
         showsVerticalScrollIndicator={false}
         className="flex-1 px-6">
-        <Text className="mb-6 font-poppins-bold text-3xl text-white">Search</Text>
-
-        <View className="mb-6 flex-row items-center gap-3 rounded-2xl border border-white/10 bg-surface-card px-5 py-4">
+        <View className="mb-6 mt-2 flex-row items-center gap-3 rounded-2xl border border-white/10 bg-surface-card px-5 py-4">
           <SymbolView
             tintColor="#9CA3AF"
             name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
@@ -133,32 +188,10 @@ export default function SearchScreen() {
           />
         )}
 
-        {results && results.length > 0 && (
-          <View className="flex-row gap-4">
-            {[leftColumn, rightColumn].map((column, columnIndex) => (
-              <View key={columnIndex} className="flex-1 gap-4">
-                {column.map((recipe, i) => {
-                  const presentation = getRecipePresentation(recipe.id);
-                  return (
-                    <RecipeCard
-                      key={recipe.id}
-                      title={recipe.title}
-                      timeMinutes={recipe.prep_time_minutes + recipe.cook_time_minutes}
-                      difficulty={getDifficulty(recipe.prep_time_minutes, recipe.cook_time_minutes)}
-                      gradient={presentation.gradient}
-                      icon={presentation.icon}
-                      iconAndroid={presentation.iconAndroid}
-                      imageUrl={resolveRecipeImageUrl(recipe.image_url)}
-                      onPress={() => router.push(`/recipe/${recipe.id}`)}
-                      containerStyle={{ width: '100%' }}
-                      thumbnailHeight={HEIGHTS[(columnIndex + i * 2) % HEIGHTS.length]}
-                    />
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-        )}
+        {results &&
+          results.map((recipe) => (
+            <SearchResultRow key={recipe.id} recipe={recipe} onPress={() => router.push(`/recipe/${recipe.id}`)} />
+          ))}
       </ScrollView>
     </ScreenBackground>
   );

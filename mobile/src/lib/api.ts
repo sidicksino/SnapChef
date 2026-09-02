@@ -74,6 +74,20 @@ export const authApi = {
       `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
     ),
+
+  // The backend's forgot-password is an explicit `# MOCK EMAIL SENDER` —
+  // it prints the reset link to the *backend's own terminal* instead of
+  // actually sending an email (no email service is configured). Real,
+  // working request/response either way — just no delivery yet.
+  forgotPassword: (email: string) =>
+    apiClient.post<{ message: string }>('/api/auth/forgot-password', { email }),
+  resetPassword: (token: string, new_password: string) =>
+    apiClient.post<{ message: string }>('/api/auth/reset-password', { token, new_password }),
+  changePassword: (current_password: string, new_password: string) =>
+    apiClient.post<{ message: string }>('/api/auth/change-password', {
+      current_password,
+      new_password,
+    }),
 };
 
 export const usersApi = {
@@ -120,6 +134,7 @@ export const recipesApi = {
       { timeout: 60000 }
     ),
   save: (payload: RecipeCreatePayload) => apiClient.post<RecipeOut>('/api/recipes', payload),
+  delete: (id: number) => apiClient.delete<void>(`/api/recipes/${id}`),
 };
 
 // The generate endpoint's response doesn't line up with what save expects

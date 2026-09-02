@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView } from 'expo-symbols';
 import { useRouter } from 'expo-router';
@@ -6,7 +5,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -21,6 +19,7 @@ import { Brand } from '@/constants/theme';
 import { EmptyState } from '@/components/empty-state';
 import { getApiErrorMessage } from '@/lib/api-client';
 import { getDifficulty, getRecipePresentation } from '@/lib/recipe-presentation';
+import { PageHeader } from '@/components/page-header';
 import { recipesApi, resolveRecipeImageUrl, type RecipeOut } from '@/lib/api';
 import { RecipeCard } from '@/components/recipe-card';
 import { ScreenBackground } from '@/components/screen-background';
@@ -149,9 +148,10 @@ export default function HomeScreen() {
   return (
     <ScreenBackground>
       <StatusBar style="light" />
+      <PageHeader title="Home" />
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 24,
+          paddingTop: 8,
           paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
         }}
         className="flex-1"
@@ -160,19 +160,7 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ffffff" />
         }>
         <View className="px-6">
-          <View className="mb-6 flex-row items-center gap-2">
-            <Image
-              source={require('@/assets/images/logo-light.png')}
-              style={{ height: 36, width: 36 }}
-              contentFit="contain"
-            />
-            <View className="flex-row items-baseline">
-              <Text className="font-poppins-bold text-xl text-white">Snap</Text>
-              <Text className="font-poppins-bold text-xl text-brand-green">Chef</Text>
-            </View>
-          </View>
-
-          <Text className="mb-4 font-poppins-bold text-3xl text-white">
+          <Text className="mb-4 font-poppins-bold text-2xl text-white">
             What&apos;s in your fridge?
           </Text>
 
@@ -280,22 +268,6 @@ export default function HomeScreen() {
           />
         )}
       </ScrollView>
-
-      {/* Pinned above the ScrollView (a sibling, not a child, so it never
-          scrolls) — a flat fill in the exact color ScreenBackground's own
-          gradient already starts with at y:0, so scrolled-up content is
-          covered without any visible seam or mismatched tint. Considered
-          iOS 26's native scroll-edge-effect API for this instead, but it
-          only works reliably inside a native-stack header's own scroll
-          chain (still buggy even there per react-native-screens' tracker),
-          which doesn't match how the (tabs) group is structured here. */}
-      <View
-        pointerEvents="none"
-        style={[
-          { position: Platform.OS === 'web' ? ('fixed' as 'absolute') : 'absolute' },
-          { top: 0, left: 0, right: 0, height: insets.top, backgroundColor: Brand.secondary.purple },
-        ]}
-      />
     </ScreenBackground>
   );
 }

@@ -212,3 +212,37 @@ async def get_saved_recipe(
         # never distinguishes "doesn't exist" from "exists but isn't yours".
         raise HTTPException(status_code=404, detail="Recipe not found")
     return recipe
+
+
+@router.delete("/{recipe_id}", status_code=204)
+async def delete_saved_recipe(
+    recipe_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Recipe).where(Recipe.id == recipe_id, Recipe.user_id == current_user.id)
+    )
+    recipe = result.scalars().first()
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    # Best-effort cleanup of the generated image file — a recipe with no
+    # image_url (older recipes, or a failed generation) just skips this.
+    # Wrapped so a filesystem hiccup here never blocks the actual delete,
+    # which is the part the user is actually waiting on.
+    if recipe.image_url and recipe.image_url.startswith("/static/recipe_images/"):
+        try:
+            image_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                recipe.image_url.lstrip("/")
+            )
+            if os.path.isfile(image_path):
+                os.remove(image_path)
+        except OSError as e:
+            logger.warning(f"Could not remove recipe image file for recipe {recipe_id}: {e}")
+
+    # ORM-level delete (not a bulk query) so the `cascade="all, delete-orphan"`
+    # on Recipe.ingredients actually fires and removes its RecipeIngredient rows.
+    await db.delete(recipe)
+    await db.commit()

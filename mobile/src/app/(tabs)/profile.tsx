@@ -26,11 +26,16 @@ const DIETARY_OPTIONS = [
   'Dairy-Free',
 ];
 
+// Only "Change Password" has a real destination and an onPress right now.
+// The other three are known, tracked placeholders (no Preferences/
+// Notifications/Help screens exist yet) rather than silently pretending
+// they work — see the `disabled: true` styling below, not a bare
+// do-nothing Pressable.
 const ROWS = [
-  { icon: 'gearshape', android: 'settings', label: 'Preferences' },
-  { icon: 'bell', android: 'notifications', label: 'Notifications' },
-  { icon: 'lock', android: 'lock', label: 'Change Password' },
-  { icon: 'questionmark.circle', android: 'help', label: 'Help & Support' },
+  { icon: 'gearshape', android: 'settings', label: 'Preferences', route: null },
+  { icon: 'bell', android: 'notifications', label: 'Notifications', route: null },
+  { icon: 'lock', android: 'lock', label: 'Change Password', route: '/change-password' },
+  { icon: 'questionmark.circle', android: 'help', label: 'Help & Support', route: null },
 ] as const;
 
 function formatMemberSince(isoDate: string): string {
@@ -183,7 +188,9 @@ export default function ProfileScreen() {
             {ROWS.map((row) => (
               <Pressable
                 key={row.label}
-                className="flex-row items-center gap-4 rounded-2xl border border-white/10 bg-surface-card px-5 py-4 active:opacity-70">
+                disabled={!row.route}
+                onPress={row.route ? () => router.push(row.route) : undefined}
+                className={`flex-row items-center gap-4 rounded-2xl border border-white/10 bg-surface-card px-5 py-4 ${row.route ? 'active:opacity-70' : 'opacity-40'}`}>
                 <SymbolView
                   tintColor="#D1D5DB"
                   name={{ ios: row.icon, android: row.android, web: row.android }}
@@ -192,11 +199,13 @@ export default function ProfileScreen() {
                 <Text className="flex-1 font-poppins-medium text-base text-white">
                   {row.label}
                 </Text>
-                <SymbolView
-                  tintColor="#6B7280"
-                  name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-                  size={14}
-                />
+                {row.route && (
+                  <SymbolView
+                    tintColor="#6B7280"
+                    name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                    size={14}
+                  />
+                )}
               </Pressable>
             ))}
           </View>

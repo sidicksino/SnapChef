@@ -1,12 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/empty-state';
 import { getApiErrorMessage } from '@/lib/api-client';
 import { getDifficulty, getRecipePresentation } from '@/lib/recipe-presentation';
+import { PageHeader } from '@/components/page-header';
 import { recipesApi, resolveRecipeImageUrl, type RecipeOut } from '@/lib/api';
 import { RecipeCard } from '@/components/recipe-card';
 import { ScreenBackground } from '@/components/screen-background';
@@ -58,17 +59,16 @@ export default function SavedScreen() {
   return (
     <ScreenBackground>
       <StatusBar style="light" />
+      <PageHeader title="Saved" />
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + 24,
+          paddingTop: 8,
           paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
         }}
         className="flex-1 px-6"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ffffff" />
         }>
-        <Text className="mb-6 font-poppins-bold text-3xl text-white">Saved</Text>
-
         {recipes === null && !error && <ActivityIndicator color="#22C55E" className="mt-4" />}
 
         {error && (

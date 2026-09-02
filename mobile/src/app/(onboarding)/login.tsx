@@ -17,14 +17,12 @@ import { AuthTextField } from '@/components/auth-text-field';
 import { Button } from '@/components/button';
 import { FormError } from '@/components/form-error';
 import { useAuth } from '@/contexts/auth-context';
-import { useToast } from '@/contexts/toast-context';
 import { getApiErrorMessage } from '@/lib/api-client';
 
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { login } = useAuth();
-  const showToast = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -101,9 +99,7 @@ export default function LoginScreen() {
             />
           </View>
 
-          <TouchableOpacity
-            onPress={() => showToast('Password reset is not wired up yet.')}
-            className="mt-4 self-end">
+          <TouchableOpacity onPress={() => router.push('/forgot-password')} className="mt-4 self-end">
             <Text className="font-poppins-medium text-sm text-gray-400">Forgot password?</Text>
           </TouchableOpacity>
 

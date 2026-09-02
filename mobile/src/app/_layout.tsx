@@ -72,6 +72,7 @@ function RootLayoutNav() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="generate-manual" options={{ presentation: 'modal' }} />
           <Stack.Screen name="recipe/[id]" />
+          <Stack.Screen name="change-password" options={{ presentation: 'modal' }} />
         </Stack>
       </ToastProvider>
     </ThemeProvider>

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { PageHeader } from '@/components/page-header';
 import { PhotoReview } from '@/components/photo-review';
 import { useToast } from '@/contexts/toast-context';
 import { getApiErrorMessage } from '@/lib/api-client';
@@ -93,8 +94,9 @@ export default function ScanScreenWeb() {
 
   return (
     <ScreenBackground>
+      <StatusBar style="light" />
+      <PageHeader title="Scan" />
       <View className="flex-1 items-center justify-center px-8">
-        <StatusBar style="light" />
         <SymbolView
           tintColor="#6B7280"
           name={{ ios: 'camera.fill', android: 'photo_camera', web: 'camera' }}
