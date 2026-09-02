@@ -143,3 +143,22 @@ async def get_saved_recipes(
         .order_by(Recipe.created_at.desc())
     )
     return result.scalars().all()
+
+
+@router.get("/{recipe_id}", response_model=RecipeOut)
+async def get_saved_recipe(
+    recipe_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Recipe)
+        .options(selectinload(Recipe.ingredients))
+        .where(Recipe.id == recipe_id, Recipe.user_id == current_user.id)
+    )
+    recipe = result.scalars().first()
+    if not recipe:
+        # Scoped to current_user.id above rather than just id — a 404 here
+        # never distinguishes "doesn't exist" from "exists but isn't yours".
+        raise HTTPException(status_code=404, detail="Recipe not found")
+    return recipe

@@ -276,7 +276,10 @@ export default function HomeScreen() {
         </View>
 
         {recipes && recipes.length > 0 && (
-          <RecentRecipes recipes={recipes.slice(0, 9)} onPressRecipe={() => router.push('/saved')} />
+          <RecentRecipes
+            recipes={recipes.slice(0, 9)}
+            onPressRecipe={(id) => router.push(`/recipe/${id}`)}
+          />
         )}
       </ScrollView>
 

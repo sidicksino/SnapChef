@@ -71,6 +71,7 @@ function RootLayoutNav() {
           <Stack.Screen name="(onboarding)" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="generate-manual" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="recipe/[id]" />
         </Stack>
       </ToastProvider>
     </ThemeProvider>

@@ -105,6 +105,7 @@ export default function SavedScreen() {
                       icon={presentation.icon}
                       iconAndroid={presentation.iconAndroid}
                       imageUrl={resolveRecipeImageUrl(recipe.image_url)}
+                      onPress={() => router.push(`/recipe/${recipe.id}`)}
                       containerStyle={{ width: '100%' }}
                       thumbnailHeight={HEIGHTS[(columnIndex + i * 2) % HEIGHTS.length]}
                     />

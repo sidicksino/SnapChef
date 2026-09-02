@@ -84,6 +84,7 @@ export const usersApi = {
 
 export const recipesApi = {
   list: () => apiClient.get<RecipeOut[]>('/api/recipes'),
+  get: (id: number) => apiClient.get<RecipeOut>(`/api/recipes/${id}`),
   // Longer timeout than the client default (15s) — this now does a text
   // generation call *and* an image generation call server-side, which can
   // together take longer than that, especially on a slower connection.
