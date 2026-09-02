@@ -1,7 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { Pressable, Text, View } from 'react-native';
 
-import { getIngredientIcon } from '@/constants/ingredient-icons';
+import { getIngredientIconFuzzy } from '@/constants/ingredient-icons';
 
 type IngredientRowProps = {
   name: string;
@@ -13,13 +13,16 @@ type IngredientRowProps = {
 // toggling whether it's included when generating. Unchecking dims the row
 // rather than removing it — the item stays visible/reversible, matching how
 // a detected-but-wrong guess should be handled (correct it, don't lose the
-// context that it was there).
+// context that it was there). Uses the *fuzzy* icon lookup (substring, not
+// exact match) — Gemini detection returns compound phrases like "goat
+// cheese" or "red apple", which an exact match against "Cheese"/"Apple"
+// would never hit.
 export function IngredientRow({ name, included, onToggle }: IngredientRowProps) {
   return (
     <Pressable
       onPress={onToggle}
       className="mb-2 flex-row items-center gap-3 rounded-2xl border border-white/10 bg-surface-card px-4 py-3 active:opacity-70">
-      <Text className="text-2xl">{getIngredientIcon(name)}</Text>
+      <Text className="text-2xl">{getIngredientIconFuzzy(name)}</Text>
       <Text
         className={`flex-1 font-poppins-medium text-base ${included ? 'text-white' : 'text-gray-500'}`}>
         {name}

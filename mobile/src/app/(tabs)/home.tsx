@@ -91,17 +91,13 @@ function RecentRecipes({ recipes, onPressRecipe }: { recipes: RecipeOut[]; onPre
       </View>
 
       {pairs.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          directionalLockEnabled
-          contentContainerStyle={{
+        <View
+          style={{
             gap: GRID_CARD_GAP,
             paddingHorizontal: GRID_SIDE_PADDING,
-            alignItems: 'flex-start',
           }}>
           {pairs.map((pair, i) => (
-            <View key={i} className="gap-4">
+            <View key={i} className="flex-row gap-4">
               {pair.map((recipe) => (
                 <RecipeGridCard
                   key={recipe.id}
@@ -112,7 +108,7 @@ function RecentRecipes({ recipes, onPressRecipe }: { recipes: RecipeOut[]; onPre
               ))}
             </View>
           ))}
-        </ScrollView>
+        </View>
       )}
     </View>
   );
