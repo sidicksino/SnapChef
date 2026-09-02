@@ -35,6 +35,9 @@ class RecipeResponse(BaseModel):
     estimated_time: int
     nutritional_info: Optional[str] = None
 
+class DetectedIngredientsResponse(BaseModel):
+    ingredients: List[str]
+
 # Deliberately NOT adding image_url onto RecipeResponse itself — that model
 # is also passed as `response_format` to the LLM's structured-output call,
 # so any field on it is something the LLM is asked to fill in. The image is

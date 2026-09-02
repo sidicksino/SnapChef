@@ -3,11 +3,13 @@ import { SymbolView } from 'expo-symbols';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { PhotoReview } from '@/components/photo-review';
 import { useToast } from '@/contexts/toast-context';
+import { getApiErrorMessage } from '@/lib/api-client';
+import { recipesApi } from '@/lib/api';
 import { ScreenBackground } from '@/components/screen-background';
 
 // react-native-vision-camera is a native-only Nitro module — importing it
@@ -16,11 +18,16 @@ import { ScreenBackground } from '@/components/screen-background';
 // free of that import entirely; see scan.tsx for the real native screen.
 // expo-image-picker, unlike vision-camera, genuinely supports web (opens
 // a native <input type="file"> picker), so a photo can still be chosen here.
+// "Use Photo" sends it to the same Gemini-vision detect-ingredients
+// endpoint scan.tsx uses — that's a plain network call with no native
+// dependency, so unlike the old on-device model, web gets real detection
+// too now, not just a placeholder.
 export default function ScanScreenWeb() {
   const router = useRouter();
   const showToast = useToast();
   const { autoPick } = useLocalSearchParams<{ autoPick?: string }>();
   const [pickedUri, setPickedUri] = useState<string | null>(null);
+  const [detecting, setDetecting] = useState(false);
   const autoPickHandled = useRef(false);
 
   const handlePickPhoto = async () => {
@@ -42,15 +49,45 @@ export default function ScanScreenWeb() {
     }
   }, [autoPick]);
 
+  const handleUsePhoto = async () => {
+    if (!pickedUri || detecting) return;
+    setDetecting(true);
+    try {
+      const { data } = await recipesApi.detectIngredients(pickedUri);
+      if (data.ingredients.length === 0) {
+        showToast("Couldn't confidently identify any ingredients — add them below instead.");
+      }
+      router.push({
+        pathname: '/generate-manual',
+        params: { detected: JSON.stringify(data.ingredients) },
+      });
+    } catch (error) {
+      showToast(getApiErrorMessage(error, 'Could not analyze this photo.'));
+    } finally {
+      setDetecting(false);
+    }
+  };
+
+  if (detecting) {
+    return (
+      <ScreenBackground>
+        <View className="flex-1 items-center justify-center px-8">
+          <StatusBar style="light" />
+          <ActivityIndicator color="#22C55E" size="large" />
+          <Text className="mb-1 mt-6 font-poppins-semibold text-lg text-white">
+            Detecting ingredients…
+          </Text>
+          <Text className="text-center font-poppins-regular text-sm text-gray-400">
+            This may take a few seconds
+          </Text>
+        </View>
+      </ScreenBackground>
+    );
+  }
+
   if (pickedUri) {
     return (
-      <PhotoReview
-        uri={pickedUri}
-        onRetake={() => setPickedUri(null)}
-        onUsePhoto={() =>
-          showToast('Ingredient detection from this photo is not wired up yet.')
-        }
-      />
+      <PhotoReview uri={pickedUri} onRetake={() => setPickedUri(null)} onUsePhoto={handleUsePhoto} />
     );
   }
 

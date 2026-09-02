@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -11,7 +11,7 @@ from openai import AsyncOpenAI
 
 from database import get_db
 from models import User, Recipe, RecipeIngredient
-from schemas import RecipeRequest, RecipeResponse, RecipeGenerateResponse, RecipeCreate, RecipeOut
+from schemas import RecipeRequest, RecipeResponse, RecipeGenerateResponse, DetectedIngredientsResponse, RecipeCreate, RecipeOut
 from deps import get_current_user
 
 router = APIRouter(prefix="/api/recipes", tags=["recipes"])
@@ -56,6 +56,56 @@ async def generate_recipe_image(recipe: RecipeResponse) -> Optional[str]:
     except Exception as e:
         logger.warning(f"Recipe image generation failed, continuing without an image: {e}")
         return None
+
+
+@router.post("/detect-ingredients", response_model=DetectedIngredientsResponse)
+async def detect_ingredients(
+    image: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Identifies distinct food ingredients visible in an uploaded photo via
+    Gemini's vision input — replaces an earlier on-device YOLO model that,
+    real-device testing showed, was only ever confidently finding one
+    dominant item per photo (consistent with its training data being mostly
+    single-item crops/product shots, not cluttered multi-item scenes like an
+    actual fridge). A general-purpose vision model handles that kind of
+    busy, real-world photo far better."""
+    if not client:
+        raise HTTPException(status_code=500, detail="Gemini API key not configured")
+
+    image_bytes = await image.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded image is empty")
+    b64 = base64.b64encode(image_bytes).decode()
+    mime_type = image.content_type or "image/jpeg"
+
+    try:
+        completion = await client.beta.chat.completions.parse(
+            model=GEMINI_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You identify distinct food ingredients visible in a photo of a "
+                        "fridge, pantry, or kitchen counter, for a recipe app. List each "
+                        "distinct ingredient once, using simple common names (e.g. "
+                        "'tomato', not 'two ripe tomatoes on a plate'). Only list actual "
+                        "food ingredients, not containers, appliances, or utensils."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "List the distinct food ingredients visible in this photo."},
+                        {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{b64}"}},
+                    ],
+                },
+            ],
+            response_format=DetectedIngredientsResponse,
+        )
+        return completion.choices[0].message.parsed
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to detect ingredients: {str(e)}")
 
 
 @router.post("/generate", response_model=RecipeGenerateResponse)

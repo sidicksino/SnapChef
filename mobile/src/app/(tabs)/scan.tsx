@@ -11,17 +11,23 @@ import { Button } from '@/components/button';
 import { DetectingIngredients } from '@/components/detecting-ingredients';
 import { PhotoReview } from '@/components/photo-review';
 import { useToast } from '@/contexts/toast-context';
-import { detectIngredients } from '@/lib/ingredient-detector';
+import { getApiErrorMessage } from '@/lib/api-client';
+import { recipesApi } from '@/lib/api';
 import { ScreenBackground } from '@/components/screen-background';
 
 // The camera preview + capture flow, plus a "choose from library" path —
 // the iOS/Android Simulator has no real camera hardware at all, so picking
 // an existing photo is the only way to test this flow there (add one to
-// the Simulator's own Photos app first). "Use Photo" runs the captured or
-// picked image through the on-device YOLOv8 model
-// (react-native-fast-tflite, assets/models/best.tflite) and hands the
-// detected ingredients to the same manual-entry/generate screen the
-// "Enter ingredients manually" link uses, pre-filled and still editable.
+// the Simulator's own Photos app first). "Use Photo" sends the captured or
+// picked image to Gemini's vision-based /api/recipes/detect-ingredients
+// (see recipesApi.detectIngredients) and hands the detected ingredients to
+// the same manual-entry/generate screen the "Enter ingredients manually"
+// link uses, pre-filled and still editable. An on-device YOLO model (see
+// project memory: snapchef-ingredient-detection) handled this before —
+// replaced after real-device testing showed it only ever confidently found
+// one dominant item per busy photo, a training-data ceiling no amount of
+// app-side tuning could fix. Gemini handles cluttered real-world scenes far
+// better, at the cost of needing a network call instead of running offline.
 export default function ScanScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -86,16 +92,16 @@ export default function ScanScreen() {
     if (!capturedUri || detecting) return;
     setDetecting(true);
     try {
-      const detections = await detectIngredients(capturedUri);
-      if (detections.length === 0) {
+      const { data } = await recipesApi.detectIngredients(capturedUri);
+      if (data.ingredients.length === 0) {
         showToast("Couldn't confidently identify any ingredients — add them below instead.");
       }
       router.push({
         pathname: '/generate-manual',
-        params: { detected: JSON.stringify(detections.map((d) => d.label)) },
+        params: { detected: JSON.stringify(data.ingredients) },
       });
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Could not analyze this photo.');
+      showToast(getApiErrorMessage(error, 'Could not analyze this photo.'));
     } finally {
       setDetecting(false);
     }

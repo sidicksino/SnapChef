@@ -1,8 +1,13 @@
-// One representative emoji per trained class (see ingredient-labels.ts) for
-// the ingredient-review list — there's no food photography for 120 crowd-
-// sourced classes, and an emoji per row reads far better than a bare list.
-// Many entries here are close-but-not-exact (no dedicated emoji exists for
-// e.g. "Bethu ko Saag" or "Okra") — falls back to a sensible category emoji
+// One representative emoji per ingredient name, for the ingredient-review
+// list — there's no food photography, and an emoji per row reads far
+// better than a bare list. Originally built against a 120-class on-device
+// model's specific (often South-Asian-English) vocabulary; ingredient
+// detection is now Gemini vision instead (see snapchef-ingredient-detection
+// in project memory), which uses everyday English — common aliases (e.g.
+// "Eggplant" alongside "Brinjal", "Bell Pepper" alongside "Capsicum") are
+// kept beside the originals rather than replacing them, so both still
+// resolve. Many entries are close-but-not-exact (no dedicated emoji exists
+// for e.g. "Dill" or "Okra") — falls back to a sensible category emoji
 // (🥬 for leafy greens, 🫘 for legumes, etc.) rather than leaving a blank.
 const ICONS: Record<string, string> = {
   'Akabare Khursani': '🌶️',
@@ -31,11 +36,13 @@ const ICONS: Record<string, string> = {
   Butter: '🧈',
   Cabbage: '🥬',
   Capsicum: '🫑',
+  'Bell Pepper': '🫑', // = Capsicum above
   Carrot: '🥕',
   Cassava: '🥔',
   Cauliflower: '🥦',
   Chayote: '🥒',
   Cheese: '🧀',
+  Coconut: '🥥',
   'Chicken Gizzards': '🍗',
   Chicken: '🍗',
   Chickpeas: '🫘',
@@ -49,7 +56,9 @@ const ICONS: Record<string, string> = {
   Cornflakes: '🥣',
   'Crab Meat': '🦀',
   Cucumber: '🥒',
+  Dill: '🌿',
   Egg: '🥚',
+  Eggplant: '🍆', // = Brinjal above
   'Farsi ko Munta': '🥬',
   'Fiddlehead Ferns': '🌿',
   Fish: '🐟',
@@ -81,8 +90,10 @@ const ICONS: Record<string, string> = {
   Okra: '🌿',
   'Olive Oil': '🫒',
   'Onion Leaves': '🧅',
+  Scallion: '🧅', // = Onion Leaves above
   Onion: '🧅',
   Orange: '🍊',
+  Tangerine: '🍊', // close enough to Orange to share an icon
   Palak: '🥬',
   Palungo: '🥬',
   Paneer: '🧀',
@@ -136,8 +147,9 @@ const ICONS: Record<string, string> = {
 const FALLBACK_ICON = '🍽️';
 
 /** Looks up an emoji for a (case-insensitive) ingredient name. Falls back to
- * a plate emoji for anything typed manually that isn't one of the 120
- * trained classes — manual entry is free-text, not constrained to them. */
+ * a plate emoji for anything not in the list above — both manual entry and
+ * Gemini's detected/generated ingredient names are free-text, not
+ * constrained to a fixed vocabulary. */
 export function getIngredientIcon(name: string): string {
   const exact = ICONS[name];
   if (exact) return exact;

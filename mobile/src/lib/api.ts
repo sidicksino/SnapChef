@@ -82,9 +82,34 @@ export const usersApi = {
     apiClient.put<UserOut>('/api/users/me', { dietary_preferences }),
 };
 
+// Builds multipart form data for an image upload from a local photo URI.
+// Native (`file://...`) URIs use React Native's special {uri, name, type}
+// FormData shape; web's picker can hand back a `data:`/`blob:` URI instead,
+// which that shape doesn't work for — fetch it and append a real Blob.
+async function buildImageFormData(uri: string): Promise<FormData> {
+  const formData = new FormData();
+  if (uri.startsWith('file://')) {
+    // @ts-expect-error — React Native's FormData accepts this file-object
+    // shape; the DOM lib's FormData.append types don't know about it.
+    formData.append('image', { uri, name: 'photo.jpg', type: 'image/jpeg' });
+  } else {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    formData.append('image', blob, 'photo.jpg');
+  }
+  return formData;
+}
+
 export const recipesApi = {
   list: () => apiClient.get<RecipeOut[]>('/api/recipes'),
   get: (id: number) => apiClient.get<RecipeOut>(`/api/recipes/${id}`),
+  detectIngredients: async (uri: string) => {
+    const formData = await buildImageFormData(uri);
+    return apiClient.post<{ ingredients: string[] }>('/api/recipes/detect-ingredients', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 30000,
+    });
+  },
   // Longer timeout than the client default (15s) — this now does a text
   // generation call *and* an image generation call server-side, which can
   // together take longer than that, especially on a slower connection.

@@ -109,9 +109,9 @@ the web preview. A physical device needs the Expo Dev Client build below
 installed first, then scan the QR code from the same terminal.
 
 ### 3. Native builds (required once for camera features)
-`react-native-vision-camera` and `react-native-fast-tflite` are native
-modules — Expo Go can't run this app. The first time (or after adding a
-native dependency), build a real dev client instead of just `expo start`:
+`react-native-vision-camera` is a native module — Expo Go can't run this
+app. The first time (or after adding a native dependency), build a real
+dev client instead of just `expo start`:
 ```bash
 npx expo run:ios      # or: npx expo run:android
 ```
