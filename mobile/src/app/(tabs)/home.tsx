@@ -3,56 +3,115 @@ import { SymbolView } from 'expo-symbols';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Brand } from '@/constants/theme';
 import { EmptyState } from '@/components/empty-state';
 import { getApiErrorMessage } from '@/lib/api-client';
 import { getDifficulty, getRecipePresentation } from '@/lib/recipe-presentation';
-import { recipesApi, type RecipeOut } from '@/lib/api';
+import { recipesApi, resolveRecipeImageUrl, type RecipeOut } from '@/lib/api';
 import { RecipeCard } from '@/components/recipe-card';
 import { ScreenBackground } from '@/components/screen-background';
 import { TAB_BAR_CLEARANCE } from '@/components/tab-bar';
 
-function RecipeRow({ recipes, onPressRecipe }: { recipes: RecipeOut[]; onPressRecipe: (id: number) => void }) {
+function RecipeGridCard({
+  recipe,
+  onPress,
+  width,
+}: {
+  recipe: RecipeOut;
+  onPress: () => void;
+  width: number;
+}) {
+  const presentation = getRecipePresentation(recipe.id);
   return (
-    // Explicit position:'relative' — the fade overlay below is
-    // position:'absolute', and on web (unlike native's Yoga-driven default)
-    // an absolute child positions against the nearest *explicitly*
-    // positioned ancestor, not just any parent View.
-    <View style={{ position: 'relative' }}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 16, paddingHorizontal: 24, paddingRight: 40 }}>
-        {recipes.map((recipe) => {
-          const presentation = getRecipePresentation(recipe.id);
-          return (
-            <RecipeCard
-              key={recipe.id}
-              title={recipe.title}
-              timeMinutes={recipe.prep_time_minutes + recipe.cook_time_minutes}
-              difficulty={getDifficulty(recipe.prep_time_minutes, recipe.cook_time_minutes)}
-              gradient={presentation.gradient}
-              icon={presentation.icon}
-              iconAndroid={presentation.iconAndroid}
-              onPress={() => onPressRecipe(recipe.id)}
-            />
-          );
-        })}
-      </ScrollView>
-      {/* Fades the trailing edge so the next card being partially visible
-          reads as an intentional "there's more" hint, not a broken crop.
-          A translucent black (not a flat color match) so it still blends
-          correctly now that the page background is a gradient, not flat. */}
-      <LinearGradient
-        colors={['transparent', 'rgba(11,18,32,0.9)']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        pointerEvents="none"
-        style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40 }}
-      />
+    <RecipeCard
+      title={recipe.title}
+      timeMinutes={recipe.prep_time_minutes + recipe.cook_time_minutes}
+      difficulty={getDifficulty(recipe.prep_time_minutes, recipe.cook_time_minutes)}
+      gradient={presentation.gradient}
+      icon={presentation.icon}
+      iconAndroid={presentation.iconAndroid}
+      imageUrl={resolveRecipeImageUrl(recipe.image_url)}
+      onPress={onPress}
+      containerStyle={{ width }}
+    />
+  );
+}
+
+const GRID_SIDE_PADDING = 24;
+const GRID_CARD_GAP = 16;
+
+// The most recent recipe (recipes[0] — the list is already newest-first)
+// gets a big featured card up top; everything else scrolls horizontally in
+// pairs (2 rows tall per swipe) rather than one long single-row strip, so
+// the section reads as "your latest, then browse the rest" instead of a
+// flat list — and fits far more without the page needing to scroll as far.
+function RecentRecipes({ recipes, onPressRecipe }: { recipes: RecipeOut[]; onPressRecipe: (id: number) => void }) {
+  const { width: screenWidth } = useWindowDimensions();
+  const [featured, ...rest] = recipes;
+  const pairs: RecipeOut[][] = [];
+  for (let i = 0; i < rest.length; i += 2) {
+    pairs.push(rest.slice(i, i + 2));
+  }
+  const featuredPresentation = getRecipePresentation(featured.id);
+  // Two columns fill exactly the same left/right edges as the full-width
+  // featured card above, instead of a fixed card width that leaves an
+  // uneven gap on wider screens — more columns are still reachable by
+  // scrolling, each the same width as these first two.
+  const gridCardWidth = (screenWidth - GRID_SIDE_PADDING * 2 - GRID_CARD_GAP) / 2;
+
+  return (
+    <View>
+      <View className="mb-4 px-6">
+        <RecipeCard
+          title={featured.title}
+          timeMinutes={featured.prep_time_minutes + featured.cook_time_minutes}
+          difficulty={getDifficulty(featured.prep_time_minutes, featured.cook_time_minutes)}
+          gradient={featuredPresentation.gradient}
+          icon={featuredPresentation.icon}
+          iconAndroid={featuredPresentation.iconAndroid}
+          imageUrl={resolveRecipeImageUrl(featured.image_url)}
+          onPress={() => onPressRecipe(featured.id)}
+          containerStyle={{ width: '100%' }}
+          thumbnailHeight={180}
+        />
+      </View>
+
+      {pairs.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          directionalLockEnabled
+          contentContainerStyle={{
+            gap: GRID_CARD_GAP,
+            paddingHorizontal: GRID_SIDE_PADDING,
+            alignItems: 'flex-start',
+          }}>
+          {pairs.map((pair, i) => (
+            <View key={i} className="gap-4">
+              {pair.map((recipe) => (
+                <RecipeGridCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  onPress={() => onPressRecipe(recipe.id)}
+                  width={gridCardWidth}
+                />
+              ))}
+            </View>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -96,14 +155,16 @@ export default function HomeScreen() {
           paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
         }}
         className="flex-1"
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ffffff" />
         }>
         <View className="px-6">
-          <View className="mb-6 flex-row items-baseline">
-            <Text className="font-poppins-bold text-2xl text-white">Snap</Text>
-            <Text className="font-poppins-bold text-2xl text-brand-green">Chef</Text>
-          </View>
+          <Image
+            source={require('@/assets/images/logo-light.png')}
+            style={{ height: 32, width: 120, marginBottom: 24 }}
+            contentFit="contain"
+          />
 
           <Text className="mb-4 font-poppins-bold text-3xl text-white">
             What&apos;s in your fridge?
@@ -207,7 +268,7 @@ export default function HomeScreen() {
         </View>
 
         {recipes && recipes.length > 0 && (
-          <RecipeRow recipes={recipes.slice(0, 8)} onPressRecipe={() => router.push('/saved')} />
+          <RecentRecipes recipes={recipes.slice(0, 9)} onPressRecipe={() => router.push('/saved')} />
         )}
       </ScrollView>
     </ScreenBackground>

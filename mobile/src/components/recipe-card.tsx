@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SymbolView, type AndroidSymbol } from 'expo-symbols';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
@@ -11,6 +12,10 @@ export type RecipeCardProps = {
   /** SF Symbol name for the large decorative watermark icon on the thumbnail. */
   icon: SFSymbols7_0;
   iconAndroid: AndroidSymbol;
+  /** The real generated photo (already resolved via resolveRecipeImageUrl),
+   * if this recipe has one — shown instead of the gradient+icon fallback.
+   * Recipes saved before image generation existed won't have one. */
+  imageUrl?: string;
   favorited?: boolean;
   onPress?: () => void;
   /** Omit entirely to hide the favorite button — the backend has no
@@ -25,13 +30,12 @@ export type RecipeCardProps = {
   thumbnailHeight?: number;
 };
 
-// Matches the "CARDS" component in the design system, with one deliberate
-// swap: the design system's card mockup uses real food photography, but we
-// don't have any recipe photo assets yet (and got burned once already
-// hotlinking a stock photo that turned out to be a dead link — see
-// (onboarding)/index.tsx's history). A gradient + large watermark icon
-// stands in until real photos are wired up, rather than gambling on more
-// external links.
+// Matches the "CARDS" component in the design system. Recipes generated
+// since the image-generation feature landed carry a real photo (imageUrl);
+// older saved recipes (and the rare case a generation's image call failed)
+// don't, and fall back to a gradient + large watermark icon instead —
+// deliberately not gambling on an external stock-photo link again (see
+// (onboarding)/index.tsx's history with a dead hotlinked image).
 export function RecipeCard({
   title,
   timeMinutes,
@@ -39,6 +43,7 @@ export function RecipeCard({
   gradient,
   icon,
   iconAndroid,
+  imageUrl,
   favorited,
   onPress,
   onToggleFavorite,
@@ -53,22 +58,28 @@ export function RecipeCard({
       <View
         className="mb-3 overflow-hidden rounded-2xl"
         style={{ height: thumbnailHeight }}>
-        {/* NativeWind's className doesn't reliably position LinearGradient
-            on web (it's a native module, not a plain View) — use `style`
-            for absolute-fill instead. */}
-        <LinearGradient
-          colors={gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <View className="absolute -bottom-3 -right-3 opacity-25" pointerEvents="none">
-          <SymbolView
-            tintColor="#ffffff"
-            name={{ ios: icon, android: iconAndroid, web: iconAndroid }}
-            size={80}
-          />
-        </View>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        ) : (
+          <>
+            {/* NativeWind's className doesn't reliably position LinearGradient
+                on web (it's a native module, not a plain View) — use `style`
+                for absolute-fill instead. */}
+            <LinearGradient
+              colors={gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <View className="absolute -bottom-3 -right-3 opacity-25" pointerEvents="none">
+              <SymbolView
+                tintColor="#ffffff"
+                name={{ ios: icon, android: iconAndroid, web: iconAndroid }}
+                size={80}
+              />
+            </View>
+          </>
+        )}
         {onToggleFavorite && (
           <Pressable
             onPress={onToggleFavorite}

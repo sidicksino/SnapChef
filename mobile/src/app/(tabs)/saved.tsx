@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState } from '@/components/empty-state';
 import { getApiErrorMessage } from '@/lib/api-client';
 import { getDifficulty, getRecipePresentation } from '@/lib/recipe-presentation';
-import { recipesApi, type RecipeOut } from '@/lib/api';
+import { recipesApi, resolveRecipeImageUrl, type RecipeOut } from '@/lib/api';
 import { RecipeCard } from '@/components/recipe-card';
 import { ScreenBackground } from '@/components/screen-background';
 import { TAB_BAR_CLEARANCE } from '@/components/tab-bar';
@@ -104,6 +104,7 @@ export default function SavedScreen() {
                       gradient={presentation.gradient}
                       icon={presentation.icon}
                       iconAndroid={presentation.iconAndroid}
+                      imageUrl={resolveRecipeImageUrl(recipe.image_url)}
                       containerStyle={{ width: '100%' }}
                       thumbnailHeight={HEIGHTS[(columnIndex + i * 2) % HEIGHTS.length]}
                     />
